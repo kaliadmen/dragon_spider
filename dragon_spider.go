@@ -5,9 +5,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"log"
+	"net/http"
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 const version = "1.0.0"
@@ -131,4 +133,23 @@ func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger) {
 
 	return infoLog, errorLog
 
+}
+
+//ListenAndServe starts the web server
+func (ds *DragonSpider) ListenAndServe() {
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
+		ErrorLog:     ds.ErrorLog,
+		Handler:      ds.routes(),
+		IdleTimeout:  30 * time.Second,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 600 * time.Second,
+	}
+
+	ds.InfoLog.Printf("Listening on port: %s", os.Getenv("PORT"))
+
+	err := srv.ListenAndServe()
+	if err != nil {
+		ds.ErrorLog.Fatal(err)
+	}
 }
