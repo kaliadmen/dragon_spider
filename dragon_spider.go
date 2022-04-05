@@ -84,7 +84,7 @@ func (ds *DragonSpider) New(rp string) error {
 	}
 
 	//set up render engine
-	ds.Render = ds.createRenderer(ds)
+	ds.createRenderer()
 
 	//set routes
 	ds.Routes = ds.routes().(*chi.Mux)
@@ -145,7 +145,7 @@ func (ds *DragonSpider) ListenAndServe() {
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
 		ErrorLog:     ds.ErrorLog,
-		Handler:      ds.routes(),
+		Handler:      ds.Routes,
 		IdleTimeout:  30 * time.Second,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 600 * time.Second,
@@ -160,14 +160,14 @@ func (ds *DragonSpider) ListenAndServe() {
 }
 
 //createRenderer creates a render engine for template files
-func (ds *DragonSpider) createRenderer(d *DragonSpider) *render.Render {
+func (ds *DragonSpider) createRenderer() {
 	engine := render.Render{
-		Renderer: d.config.renderer,
-		RootPath: d.RootPath,
+		Renderer: ds.config.renderer,
+		RootPath: ds.RootPath,
 		//Secure:     false,
-		Port: d.config.port,
+		Port: ds.config.port,
 		//ServerName: "",
 	}
 
-	return &engine
+	ds.Render = &engine
 }
