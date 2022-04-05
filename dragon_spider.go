@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
+	"github.com/kaliadmen/dragon_spider/render"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ type DragonSpider struct {
 	Version  string
 	ErrorLog *log.Logger
 	InfoLog  *log.Logger
+	Render   *render.Render
 	Routes   *chi.Mux
 	RootPath string
 	config   config
@@ -80,6 +82,9 @@ func (ds *DragonSpider) New(rp string) error {
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
 	}
+
+	//set up render engine
+	ds.Render = ds.createRenderer(ds)
 
 	//set routes
 	ds.Routes = ds.routes().(*chi.Mux)
@@ -152,4 +157,17 @@ func (ds *DragonSpider) ListenAndServe() {
 	if err != nil {
 		ds.ErrorLog.Fatal(err)
 	}
+}
+
+//createRenderer creates a render engine for template files
+func (ds *DragonSpider) createRenderer(d *DragonSpider) *render.Render {
+	engine := render.Render{
+		Renderer: d.config.renderer,
+		RootPath: d.RootPath,
+		//Secure:     false,
+		Port: d.config.port,
+		//ServerName: "",
+	}
+
+	return &engine
 }

@@ -1,7 +1,6 @@
 package dragonSpider
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
@@ -21,11 +20,6 @@ func (ds *DragonSpider) routes() http.Handler {
 	}
 	//recovers from panics
 	mux.Use(middleware.Recoverer)
-
-	//test route
-	mux.Get("/", func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Fprint(writer, "Your server is configured correctly")
-	})
 
 	return mux
 }
