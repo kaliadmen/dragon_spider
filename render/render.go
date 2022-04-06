@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
 	"html/template"
@@ -34,19 +35,15 @@ type TemplateData struct {
 func (ren *Render) Page(w http.ResponseWriter, r *http.Request, view string, variables, data interface{}) error {
 	switch strings.ToLower(ren.Renderer) {
 	case "go":
-		err := ren.UseGo(w, r, view, data)
-		if err != nil {
-			return err
-		}
+		return ren.UseGo(w, r, view, data)
 	case "jet":
 
-		err := ren.UseJet(w, r, view, variables, data)
-		if err != nil {
-			return err
-		}
+		return ren.UseJet(w, r, view, variables, data)
+	default:
+
 	}
 
-	return nil
+	return errors.New("no rendering engine found")
 }
 
 //UseGo uses go template engine to render template pages
@@ -86,13 +83,12 @@ func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName s
 		td = data.(*TemplateData)
 	}
 
-	t, err := ren.JetTemplate.GetTemplate(fmt.Sprintf("%s.jet", templateName))
+	tmpl, err := ren.JetTemplate.GetTemplate(fmt.Sprintf("%s.jet", templateName))
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
-	if err = t.Execute(w, vars, td); err != nil {
+	if err = tmpl.Execute(w, vars, td); err != nil {
 		log.Println(err)
 		return err
 	}
