@@ -2,6 +2,7 @@ package dragonSpider
 
 import (
 	"fmt"
+	"github.com/CloudyKit/jet/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/render"
@@ -15,16 +16,19 @@ import (
 
 const version = "1.0.0"
 
+//DragonSpider is an overall type for the Dragon Spider package.
+//Members exported in this type are available to any application that uses it
 type DragonSpider struct {
-	AppName  string
-	Debug    bool
-	Version  string
-	ErrorLog *log.Logger
-	InfoLog  *log.Logger
-	Render   *render.Render
-	Routes   *chi.Mux
-	RootPath string
-	config   config
+	AppName     string
+	Debug       bool
+	Version     string
+	ErrorLog    *log.Logger
+	InfoLog     *log.Logger
+	Render      *render.Render
+	JetTemplate *jet.Set
+	Routes      *chi.Mux
+	RootPath    string
+	config      config
 }
 
 type config struct {
@@ -32,7 +36,8 @@ type config struct {
 	renderer string
 }
 
-//New creates directories structure for application and assign root path to application
+//New creates application config, reads the .env file, populate Dragon Spider type bases on .env values
+//and creates the necessary directories and files if they don't exist
 func (ds *DragonSpider) New(rp string) error {
 	//create directories
 	pathConfig := initPaths{
@@ -83,6 +88,9 @@ func (ds *DragonSpider) New(rp string) error {
 		renderer: os.Getenv("RENDERER"),
 	}
 
+	var jetViews = jet.NewSet(jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rp)), jet.InDevelopmentMode())
+	ds.JetTemplate = jetViews
+
 	//set up render engine
 	ds.createRenderer()
 
@@ -92,7 +100,7 @@ func (ds *DragonSpider) New(rp string) error {
 	return nil
 }
 
-//InitDir creates initial directories
+//InitDir creates initial directories for Dragon Spider application
 func (ds *DragonSpider) InitDir(p initPaths) error {
 	root := p.rootPath
 
@@ -162,8 +170,9 @@ func (ds *DragonSpider) ListenAndServe() {
 //createRenderer creates a render engine for template files
 func (ds *DragonSpider) createRenderer() {
 	engine := render.Render{
-		Renderer: ds.config.renderer,
-		RootPath: ds.RootPath,
+		Renderer:    ds.config.renderer,
+		JetTemplate: ds.JetTemplate,
+		RootPath:    ds.RootPath,
 		//Secure:     false,
 		Port: ds.config.port,
 		//ServerName: "",
