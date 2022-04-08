@@ -21,5 +21,8 @@ func (ds *DragonSpider) routes() http.Handler {
 	//recovers from panics
 	mux.Use(middleware.Recoverer)
 
+	//use sessions
+	mux.Use(ds.SessionLoadAndSave)
+
 	return mux
 }
