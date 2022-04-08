@@ -3,9 +3,11 @@ package dragonSpider
 import (
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/render"
+	"github.com/kaliadmen/dragon_spider/session"
 	"log"
 	"net/http"
 	"os"
@@ -27,13 +29,16 @@ type DragonSpider struct {
 	Render      *render.Render
 	JetTemplate *jet.Set
 	Routes      *chi.Mux
+	Session     *scs.SessionManager
 	RootPath    string
 	config      config
 }
 
 type config struct {
-	port     string
-	renderer string
+	port        string
+	renderer    string
+	sessionType string
+	cookie      cookieConfig
 }
 
 //New creates application config, reads the .env file, populate Dragon Spider type bases on .env values
@@ -86,7 +91,28 @@ func (ds *DragonSpider) New(rp string) error {
 	ds.config = config{
 		port:     os.Getenv("PORT"),
 		renderer: os.Getenv("RENDERER"),
+		cookie: cookieConfig{
+			name:       os.Getenv("COOKIE_NAME"),
+			lifetime:   os.Getenv("COOKIE_LIFETIME"),
+			persistent: os.Getenv("COOKIE_PERSIST"),
+			Secure:     os.Getenv("COOKIE_SECURE"),
+			domain:     os.Getenv("COOKIE_DOMAIN"),
+		},
+		sessionType: os.Getenv("SESSION_TYPE"),
 	}
+
+	//set session configuration
+	ses := session.Session{
+		CookieName:     ds.config.cookie.name,
+		CookieLifetime: ds.config.cookie.lifetime,
+		CookiePersist:  ds.config.cookie.persistent,
+		CookieSecure:   ds.config.cookie.Secure,
+		CookieDomain:   ds.config.cookie.domain,
+		SessionType:    ds.config.sessionType,
+	}
+
+	//create session
+	ds.Session = ses.InitSession()
 
 	var jetViews = jet.NewSet(jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rp)), jet.InDevelopmentMode())
 	ds.JetTemplate = jetViews

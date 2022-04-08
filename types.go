@@ -6,3 +6,12 @@ type initPaths struct {
 	//directories available to application
 	dirNames []string
 }
+
+//cookieConfig holds data for cookie configuration
+type cookieConfig struct {
+	name       string
+	lifetime   string
+	persistent string
+	Secure     string
+	domain     string
+}
