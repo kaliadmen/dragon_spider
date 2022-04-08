@@ -1,6 +1,7 @@
 package render
 
 import (
+	"github.com/CloudyKit/jet/v6"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -63,6 +64,22 @@ func TestRender_UseGo(t *testing.T) {
 	if err != nil {
 		t.Error("Error rendering page", err)
 	}
+
+	td := &TemplateData{
+		IsAuthenticated: false,
+		IntMap:          nil,
+		StringMap:       nil,
+		FloatMap:        nil,
+		Data:            nil,
+		CSRFToken:       "",
+		Port:            "",
+		ServerName:      "",
+		Secure:          false,
+	}
+	err = testRenderer.Page(w, r, "home", nil, td)
+	if err != nil {
+		t.Error("Error template data has nil value", err)
+	}
 }
 
 func TestRender_UseJet(t *testing.T) {
@@ -77,5 +94,27 @@ func TestRender_UseJet(t *testing.T) {
 	err = testRenderer.Page(w, r, "home", nil, nil)
 	if err != nil {
 		t.Error("Error rendering using jet", err)
+	}
+
+	vars := make(jet.VarMap)
+	err = testRenderer.Page(w, r, "home", vars, nil)
+	if err != nil {
+		t.Error("Error Jet VarMap has nil value", err)
+	}
+
+	td := &TemplateData{
+		IsAuthenticated: false,
+		IntMap:          nil,
+		StringMap:       nil,
+		FloatMap:        nil,
+		Data:            nil,
+		CSRFToken:       "",
+		Port:            "",
+		ServerName:      "",
+		Secure:          false,
+	}
+	err = testRenderer.Page(w, r, "home", nil, td)
+	if err != nil {
+		t.Error("Error template data has nil value", err)
 	}
 }
