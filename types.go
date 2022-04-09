@@ -1,5 +1,7 @@
 package dragonSpider
 
+import "database/sql"
+
 type initPaths struct {
 	//root of application
 	rootPath string
@@ -14,4 +16,14 @@ type cookieConfig struct {
 	persistent string
 	Secure     string
 	domain     string
+}
+
+type databaseConfig struct {
+	dsn      string
+	database string
+}
+
+type Database struct {
+	DatabaseType string
+	Pool         *sql.DB
 }
