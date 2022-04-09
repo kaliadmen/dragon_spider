@@ -1,6 +1,7 @@
 package dragonSpider
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
 	"github.com/alexedwards/scs/v2"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -30,6 +32,7 @@ type DragonSpider struct {
 	JetTemplate *jet.Set
 	Routes      *chi.Mux
 	Session     *scs.SessionManager
+	Db          Database
 	RootPath    string
 	config      config
 }
@@ -39,6 +42,7 @@ type config struct {
 	renderer    string
 	sessionType string
 	cookie      cookieConfig
+	database    databaseConfig
 }
 
 //New creates application config, reads the .env file, populate Dragon Spider type bases on .env values
@@ -82,6 +86,19 @@ func (ds *DragonSpider) New(rp string) error {
 	ds.InfoLog = infoLog
 	ds.ErrorLog = errorLog
 
+	//connect to a database
+	if os.Getenv("DATABASE_TYPE") != "" {
+		pool, err := ds.OpenDb(os.Getenv("DATABASE_TYPE"), ds.CreateDSN())
+		if err != nil {
+			errorLog.Println(err)
+			os.Exit(1)
+		}
+		ds.Db = Database{
+			DatabaseType: os.Getenv("DATABASE_TYPE"),
+			Pool:         pool,
+		}
+	}
+
 	//set application variables
 	ds.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 	ds.Version = version
@@ -99,6 +116,10 @@ func (ds *DragonSpider) New(rp string) error {
 			domain:     os.Getenv("COOKIE_DOMAIN"),
 		},
 		sessionType: os.Getenv("SESSION_TYPE"),
+		database: databaseConfig{
+			dsn:      ds.CreateDSN(),
+			database: os.Getenv("DATABASE_TYPE"),
+		},
 	}
 
 	//set session configuration
@@ -185,6 +206,13 @@ func (ds *DragonSpider) ListenAndServe() {
 		WriteTimeout: 600 * time.Second,
 	}
 
+	defer func(Pool *sql.DB) {
+		err := Pool.Close()
+		if err != nil {
+
+		}
+	}(ds.Db.Pool)
+
 	ds.InfoLog.Printf("Listening on port: %s", os.Getenv("PORT"))
 
 	err := srv.ListenAndServe()
@@ -205,4 +233,28 @@ func (ds *DragonSpider) createRenderer() {
 	}
 
 	ds.Render = &engine
+}
+
+func (ds *DragonSpider) CreateDSN() string {
+	var dsn string
+	timeout := 5
+
+	switch strings.ToLower(os.Getenv("DATABASE_TYPE")) {
+	case "postgres", "postgresql":
+		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s timezone=UTCtimeout=%d",
+			os.Getenv("DATABASE_HOST"),
+			os.Getenv("DATABASE_PORT"),
+			os.Getenv("DATABASE_USER"),
+			os.Getenv("DATABASE_NAME"),
+			os.Getenv("DATABASE_SSL_MODE"),
+			timeout)
+		if os.Getenv("DATABASE_PASSWORD") != "" {
+			dsn = fmt.Sprintf("%s password=%s", dsn, os.Getenv("DATABASE_PASSWORD"))
+		}
+
+	default:
+
+	}
+
+	return dsn
 }
