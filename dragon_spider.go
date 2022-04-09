@@ -60,6 +60,7 @@ func (ds *DragonSpider) New(rp string) error {
 			"public",
 			"tmp",
 			"logs",
+			"sqlite",
 		},
 	}
 
@@ -253,7 +254,7 @@ func (ds *DragonSpider) CreateDSN() string {
 		}
 
 	default:
-
+		dsn = "./sqlite/app.db"
 	}
 
 	return dsn
