@@ -1,6 +1,13 @@
 package dragonSpider
 
-import "os"
+import (
+	"crypto/rand"
+	"os"
+)
+
+const (
+	randomString = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_+"
+)
 
 //CreateDir creates a directory if it doesn't already exist'
 func (ds *DragonSpider) CreateDir(path string) error {
@@ -29,4 +36,15 @@ func (ds *DragonSpider) CreateFile(path string) error {
 	}
 
 	return nil
+}
+
+//RandomString generates a random string length n from values in constant randomString
+func (ds *DragonSpider) RandomString(length int) string {
+	s, r := make([]rune, length), []rune(randomString)
+	for i := range s {
+		p, _ := rand.Prime(rand.Reader, len(r))
+		x, y := p.Uint64(), uint64(len(r))
+		s[i] = r[x%y]
+	}
+	return string(s)
 }
