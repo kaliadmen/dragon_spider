@@ -231,6 +231,7 @@ func (ds *DragonSpider) createRenderer() {
 		//Secure:     false,
 		Port: ds.config.port,
 		//ServerName: "",
+		Session: ds.Session,
 	}
 
 	ds.Render = &engine

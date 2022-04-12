@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
+	"github.com/alexedwards/scs/v2"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 type Render struct {
 	Renderer    string
 	JetTemplate *jet.Set
+	Session     *scs.SessionManager
 	RootPath    string
 	Secure      bool
 	Port        string
@@ -83,6 +85,8 @@ func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName s
 		td = data.(*TemplateData)
 	}
 
+	td = ren.AddDefaultData(td, r)
+
 	tmpl, err := ren.JetTemplate.GetTemplate(fmt.Sprintf("%s.jet", templateName))
 	if err != nil {
 		return err
@@ -95,4 +99,17 @@ func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName s
 
 	return nil
 
+}
+
+func (ren *Render) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
+	//check if user is authenticated
+	if ren.Session.Exists(r.Context(), "userId") {
+		td.IsAuthenticated = true
+	}
+
+	td.Secure = ren.Secure
+	td.ServerName = ren.ServerName
+	td.Port = ren.Port
+
+	return td
 }
