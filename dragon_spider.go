@@ -255,7 +255,7 @@ func (ds *DragonSpider) CreateDSN() string {
 		}
 
 	default:
-		dsn = "./sqlite/app.db"
+		dsn = os.Getenv("SQLITE_FILE")
 	}
 
 	return dsn
