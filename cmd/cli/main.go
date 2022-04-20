@@ -6,6 +6,7 @@ import (
 	dragonSpider "github.com/kaliadmen/dragon_spider"
 	"log"
 	"os"
+	"strings"
 )
 
 const version = "1.0.0"
@@ -14,6 +15,7 @@ var ds dragonSpider.DragonSpider
 
 func main() {
 	arg1, arg2, arg3, err := validateArguments()
+
 	if err != nil {
 		gracefulExit(err)
 	}
@@ -21,8 +23,19 @@ func main() {
 	switch arg1 {
 	case "help":
 		showHelp()
+
 	case "version":
 		color.Yellow("Application version: " + version)
+
+	case "make":
+		if arg2 == "" {
+			gracefulExit(errors.New("make requires subcommands: (migration|handler|model)"))
+		}
+		err = makeIt(arg2, arg3)
+		if err != nil {
+			gracefulExit(err)
+		}
+
 	default:
 		log.Panicln(arg2, arg3)
 	}
