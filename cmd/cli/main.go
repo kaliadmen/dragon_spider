@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/fatih/color"
 	dragonSpider "github.com/kaliadmen/dragon_spider"
-	"log"
 	"os"
 	"strings"
 )
@@ -14,13 +13,17 @@ const version = "1.0.0"
 var ds dragonSpider.DragonSpider
 
 func main() {
+	var message string
+
 	arg1, arg2, arg3, err := validateArguments()
 
 	if err != nil {
 		gracefulExit(err)
 	}
 
-	switch arg1 {
+	setup()
+
+	switch strings.ToLower(arg1) {
 	case "help":
 		showHelp()
 
@@ -36,9 +39,21 @@ func main() {
 			gracefulExit(err)
 		}
 
+	case "migrate":
+		if arg2 == "" {
+			arg2 = "up"
+		}
+		err = runMigration(arg2, arg3)
+		if err != nil {
+			gracefulExit(err)
+		}
+		message = "Migration completed successfully!"
+
 	default:
-		log.Panicln(arg2, arg3)
+		showHelp()
 	}
+
+	gracefulExit(nil, message)
 }
 
 func validateArguments() (string, string, string, error) {
@@ -61,12 +76,6 @@ func validateArguments() (string, string, string, error) {
 	}
 
 	return arg1, arg2, arg3, nil
-}
-
-func showHelp() {
-	color.Yellow(`Available commands:
-	help		- show help commands
-	version		- print application version`)
 }
 
 func gracefulExit(err error, msg ...string) {
