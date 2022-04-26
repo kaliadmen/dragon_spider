@@ -30,6 +30,12 @@ func runMake(arg2, arg3 string) error {
 			gracefulExit(err)
 		}
 
+	case "auth":
+		err := runAuth()
+		if err != nil {
+			gracefulExit(err)
+		}
+
 	}
 
 	return nil

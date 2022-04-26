@@ -76,5 +76,6 @@ func showHelp() {
 	migrate down all       -runs all down migrations
 	migrate n[int]         - runs n number of migrations, migrates down if negative number is passed
 	migrate reset          -runs all down migration in reverse, and runs all up migrations
-	make migrations <name> -creates an up and down migration in migrations directory`)
+	make migrations <name> -creates an up and down migration in migrations directory
+	make auth              -creates migrations, models, and middleware for authentication, and runs migrations`)
 }
