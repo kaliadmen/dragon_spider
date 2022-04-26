@@ -19,7 +19,12 @@ func setup() {
 	}
 
 	ds.RootPath = rootPath
-	ds.Db.DatabaseType = os.Getenv("DATABASE_TYPE")
+	if os.Getenv("DATABASE_TYPE") != "" {
+		ds.Db.DatabaseType = os.Getenv("DATABASE_TYPE")
+	} else {
+		ds.Db.DatabaseType = "sqlite"
+	}
+
 }
 
 func GetDSN() string {
@@ -58,7 +63,7 @@ func GetDSN() string {
 		return "mysql://" + ds.CreateDSN()
 
 	default:
-		return "file://" + ds.CreateDSN()
+		return "sqlite3://" + ds.CreateDSN()
 	}
 }
 
