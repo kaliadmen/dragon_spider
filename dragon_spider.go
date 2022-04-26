@@ -82,6 +82,12 @@ func (ds *DragonSpider) New(rp string) error {
 		return err
 	}
 
+	//create sqlite database if it doesn't exist
+	err = ds.createSqliteDb(rp)
+	if err != nil {
+		return err
+	}
+
 	//create loggers
 	infoLog, errorLog := ds.startLoggers()
 	ds.InfoLog = infoLog
@@ -187,6 +193,17 @@ func (ds *DragonSpider) createDotEnv(path string) error {
 	return nil
 }
 
+//createSqliteDb creates a sqlite database file
+func (ds *DragonSpider) createSqliteDb(path string) error {
+	if !FileExists(path + "/sqlite/app.db") {
+		err := ds.CreateFile(fmt.Sprintf("%s/sqlite/app.db", path))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 //startLoggers creates and returns info logger and error logger
 func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger) {
 	//TODO log info and error to files
@@ -269,7 +286,11 @@ func (ds *DragonSpider) CreateDSN() string {
 		}
 
 	default:
-		dsn = os.Getenv("SQLITE_FILE")
+		if os.Getenv("SQLITE_FILE") != "" {
+			dsn = os.Getenv("SQLITE_FILE")
+		} else {
+			dsn = "sqlite/app.db"
+		}
 	}
 
 	return dsn
