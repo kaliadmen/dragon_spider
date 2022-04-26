@@ -98,6 +98,20 @@ func (ds *DragonSpider) New(rp string) error {
 			DatabaseType: os.Getenv("DATABASE_TYPE"),
 			Pool:         pool,
 		}
+	} else {
+		err := os.Setenv("DATABASE_TYPE", "sqlite")
+		if err != nil {
+			return err
+		}
+		pool, err := ds.OpenDb(os.Getenv("DATABASE_TYPE"), ds.CreateDSN())
+		if err != nil {
+			errorLog.Println(err)
+			os.Exit(1)
+		}
+		ds.Db = Database{
+			DatabaseType: "sqlite",
+			Pool:         pool,
+		}
 	}
 
 	//set application variables
