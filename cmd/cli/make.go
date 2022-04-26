@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func makeIt(arg2, arg3 string) error {
+func runMake(arg2, arg3 string) error {
 	switch strings.ToLower(arg2) {
 	case "migration":
 		dbType := ds.Db.DatabaseType
