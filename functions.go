@@ -23,8 +23,7 @@ func (ds *DragonSpider) CreateDir(path string) error {
 }
 
 func (ds *DragonSpider) CreateFile(path string) error {
-	var _, err = os.Stat(path)
-	if os.IsNotExist(err) {
+	if !FileExists(path) {
 		var file, err = os.Create(path)
 		if err != nil {
 			return err
@@ -47,4 +46,12 @@ func (ds *DragonSpider) RandomString(length int) string {
 		s[i] = r[x%y]
 	}
 	return string(s)
+}
+
+//FileExists checks if a file exists
+func FileExists(file string) bool {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
