@@ -34,7 +34,7 @@ func main() {
 		if arg2 == "" {
 			gracefulExit(errors.New("make requires subcommands: (migration|handler|model)"))
 		}
-		err = makeIt(arg2, arg3)
+		err = runMake(arg2, arg3)
 		if err != nil {
 			gracefulExit(err)
 		}
