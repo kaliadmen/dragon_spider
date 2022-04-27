@@ -16,7 +16,13 @@ func (ds *DragonSpider) MigrateUp(dsn string) error {
 	if err != nil {
 		return err
 	}
-	_, _ = m.Close()
+
+	defer func(m *migrate.Migrate) {
+		err, _ := m.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(m)
 
 	if err := m.Up(); err != nil {
 		log.Println("Error running migration:", err)
@@ -31,7 +37,13 @@ func (ds *DragonSpider) MigrateDownAll(dsn string) error {
 	if err != nil {
 		return err
 	}
-	_, _ = m.Close()
+
+	defer func(m *migrate.Migrate) {
+		err, _ := m.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(m)
 
 	if err := m.Down(); err != nil {
 		log.Println("Error running migration:", err)
@@ -47,7 +59,13 @@ func (ds *DragonSpider) Steps(dsn string, n int) error {
 	if err != nil {
 		return err
 	}
-	_, _ = m.Close()
+
+	defer func(m *migrate.Migrate) {
+		err, _ := m.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(m)
 
 	if err := m.Steps(n); err != nil {
 		log.Println("Error running migration:", err)
@@ -62,7 +80,13 @@ func (ds *DragonSpider) ForceMigrate(dsn string) error {
 	if err != nil {
 		return err
 	}
-	_, _ = m.Close()
+
+	defer func(m *migrate.Migrate) {
+		err, _ := m.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}(m)
 
 	if err := m.Force(-1); err != nil {
 		log.Println("Error running migration:", err)
