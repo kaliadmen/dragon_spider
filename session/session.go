@@ -1,7 +1,13 @@
 package session
 
 import (
+	"database/sql"
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/postgresstore"
+	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,6 +21,7 @@ type Session struct {
 	CookieSecure   string
 	CookieDomain   string
 	SessionType    string
+	DbPool         *sql.DB
 }
 
 func (s *Session) InitSession() *scs.SessionManager {
@@ -49,9 +56,13 @@ func (s *Session) InitSession() *scs.SessionManager {
 	case "redis":
 
 	case "mysql", "mariadb":
+		session.Store = mysqlstore.New(s.DbPool)
+
+	case "sqlite":
+		session.Store = sqlite3store.New(s.DbPool)
 
 	case "postgres", "postgresql":
-
+		session.Store = postgresstore.New(s.DbPool)
 	default:
 		//use cookies
 	}
