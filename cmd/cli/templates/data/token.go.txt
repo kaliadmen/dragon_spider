@@ -1,0 +1,204 @@
+package data
+
+import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
+	"errors"
+	upperdb "github.com/upper/db/v4"
+	"net/http"
+	"strings"
+	"time"
+)
+
+type Token struct {
+	Id        int       `db:"id,omitempty" json:"id"`
+	UserId    int       `db:"user_id" json:"user_id"`
+	FirstName string    `db:"first_name" json:"first_name"`
+	Email     string    `db:"email" json:"email"`
+	PlainText string    `db:"token" json:"token"`
+	Hash      []byte    `db:"token_hash" json:"-"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
+	ExpiresAt time.Time `db:"expires_at" json:"expires_at"`
+}
+
+//Table returns pluralized table name
+func (t *Token) Table() string {
+	return "tokens"
+}
+
+func (t *Token) GetUserOf(token string) (*User, error) {
+	var user User
+	var tkn Token
+
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(upperdb.Cond{"token =": token})
+	err := result.One(&tkn)
+	if err != nil {
+		return nil, err
+	}
+
+	collection = upperDbSess.Collection("users")
+	result = collection.Find(upperdb.Cond{"id =": tkn.UserId})
+	err = result.One(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (t *Token) GetAllForUser(userId int) ([]*Token, error) {
+	var tokens []*Token
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(upperdb.Cond{"user_id =": userId})
+	err := result.All(&tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return tokens, nil
+}
+
+func (t *Token) GetById(id int) (*Token, error) {
+	var token Token
+
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(upperdb.Cond{"id =": id})
+	err := result.One(&token)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
+func (t *Token) GetByToken(plainText string) (*Token, error) {
+	var token Token
+
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(upperdb.Cond{"token =": plainText})
+	err := result.One(&token)
+	if err != nil {
+		return nil, err
+	}
+	return &token, nil
+}
+
+func (t *Token) DeleteById(id int) error {
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(id)
+	err := result.Delete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *Token) DeleteByToken(plainText string) error {
+	collection := upperDbSess.Collection(t.Table())
+	result := collection.Find(upperdb.Cond{"token =": plainText})
+	err := result.Delete()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Token) Insert(token Token, user *User) error {
+	collection := upperDbSess.Collection(t.Table())
+	//delete existing tokens
+	result := collection.Find(upperdb.Cond{"user_id =": user.Id})
+	err := result.Delete()
+	if err != nil {
+		return err
+	}
+	//set token variables
+	token.FirstName = user.FirstName
+	token.Email = user.Email
+	token.CreatedAt = time.Now()
+	token.UpdatedAt = time.Now()
+	//insert token
+	res, err := collection.Insert(token)
+	if err != nil {
+		return err
+	}
+
+	//set token to user
+	token.Id = getIdFromInsert(res.ID())
+	user.Token = token
+
+	return nil
+}
+
+func (t *Token) Generate(userId int, ttl time.Duration) (*Token, error) {
+	token := &Token{
+		UserId:    userId,
+		ExpiresAt: time.Now().Add(ttl),
+	}
+
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	//generate a token
+	token.PlainText = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
+	//generate a hash
+	hash := sha256.Sum256([]byte(token.PlainText))
+	token.Hash = hash[:]
+
+	return token, nil
+}
+
+func (t *Token) Authenticate(r *http.Request) (*User, error) {
+	header := r.Header.Get("Authorization")
+	if header == "" {
+		return nil, errors.New("no authorization header present")
+	}
+
+	headerParts := strings.Split(header, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return nil, errors.New("no authorization header present")
+	}
+
+	tkn := headerParts[1]
+	if len(tkn) != 26 {
+		return nil, errors.New("wrong size tkn")
+	}
+
+	toke, err := t.GetByToken(tkn)
+	if err != nil {
+		return nil, errors.New("no matching tkn found")
+	}
+
+	if toke.ExpiresAt.Before(time.Now()) {
+		return nil, errors.New("tkn has expired")
+	}
+
+	user, err := t.GetUserOf(tkn)
+	if err != nil {
+		return nil, errors.New("no user found with tkn")
+	}
+
+	return user, nil
+}
+
+func (t *Token) IsValid(userToken Token) (bool, error) {
+	_, err := t.GetUserOf(userToken.PlainText)
+	if err != nil {
+		return false, errors.New("no user found with token")
+	}
+
+	if userToken.PlainText == "" {
+		return false, errors.New("no matching token found")
+	}
+
+	if userToken.ExpiresAt.Before(time.Now()) {
+		return false, errors.New("token has expired")
+	}
+
+	return true, nil
+}

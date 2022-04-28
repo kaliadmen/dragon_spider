@@ -1,0 +1,178 @@
+package data
+
+import (
+	"errors"
+	upperdb "github.com/upper/db/v4"
+	"golang.org/x/crypto/bcrypt"
+	"time"
+)
+
+//User is the type for a user
+type User struct {
+	Id        int       `db:"id,omitempty"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	Email     string    `db:"email"`
+	Active    int       `db:"user_active"`
+	Password  string    `db:"password"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+	Token     Token     `db:"-"`
+}
+
+//Table returns pluralized table name
+func (u *User) Table() string {
+	return "users"
+}
+
+//Insert inserts a user into the database and returns the Id of the newly inserted user
+func (u *User) Insert(user User) (int, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+	if err != nil {
+		return 0, err
+	}
+	user.Password = string(hash)
+
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
+
+	collection := upperDbSess.Collection(u.Table())
+	result, err := collection.Insert(user)
+	if err != nil {
+		return 0, err
+	}
+
+	id := getIdFromInsert(result.ID())
+
+	return id, nil
+}
+
+//GetAll returns all users in database
+func (u *User) GetAll() ([]*User, error) {
+	collection := upperDbSess.Collection(u.Table())
+	var allUsers []*User
+
+	result := collection.Find().OrderBy("last_name")
+	err := result.All(&allUsers)
+	if err != nil {
+		return nil, err
+	}
+
+	return allUsers, nil
+}
+
+//GetByEmail returns a User by email address
+func (u *User) GetByEmail(email string) (*User, error) {
+	collection := upperDbSess.Collection(u.Table())
+	var user User
+	var token Token
+
+	result := collection.Find(upperdb.Cond{"email =": email})
+	err := result.One(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	collection = upperDbSess.Collection(token.Table())
+	result = collection.Find(upperdb.Cond{"id =": user.Id, "expires_at >": time.Now()}).OrderBy("created_at desc")
+	err = result.One(&token)
+	if err != nil {
+		if err != upperdb.ErrNilRecord && err != upperdb.ErrNoMoreRows {
+			return nil, err
+		}
+	}
+
+	user.Token = token
+
+	return &user, nil
+}
+
+//GetById returns a user by id
+func (u *User) GetById(id int) (*User, error) {
+	collection := upperDbSess.Collection(u.Table())
+	var user User
+	var token Token
+
+	result := collection.Find(upperdb.Cond{"id =": id})
+	err := result.One(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	collection = upperDbSess.Collection(token.Table())
+	result = collection.Find(upperdb.Cond{"user_id =": user.Id, "expires_at >": time.Now()}).OrderBy("created_at desc")
+	err = result.One(&token)
+	if err != nil {
+		if err != upperdb.ErrNilRecord && err != upperdb.ErrNoMoreRows {
+			return nil, err
+		}
+	}
+
+	user.Token = token
+
+	return &user, nil
+}
+
+func (u *User) Update(user User) error {
+	user.UpdatedAt = time.Now()
+	collection := upperDbSess.Collection(u.Table())
+	result := collection.Find(user.Id)
+	err := result.Update(&user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//DeleteById deletes a user by id
+func (u *User) DeleteById(id int) error {
+	collection := upperDbSess.Collection(u.Table())
+	result := collection.Find(id)
+	err := result.Delete()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//ResetPassword resets user's password by id using the provided password
+func (u *User) ResetPassword(id int, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+
+	user, err := u.GetById(id)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hash)
+
+	err = u.Update(*user)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//MatchPassword verifies a supplied password against the hash stored in the database.
+//It returns true if valid; false if the password does not match or if there is an error.
+//An error is only returned if something is wrong. An invalid password will not return an error
+func (u *User) MatchPassword(text string) (bool, error) {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(text))
+	if err != nil {
+		switch {
+		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
+			return false, nil
+		default:
+			return false, err
+		}
+	}
+
+	return true, nil
+}

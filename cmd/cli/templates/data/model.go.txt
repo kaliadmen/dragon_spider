@@ -1,0 +1,100 @@
+package data
+
+import (
+	upperdb "github.com/upper/db/v4"
+	"time"
+)
+// $MODELNAME$ struct
+type $MODELNAME$ struct {
+Id        int       `db:"id,omitempty"`
+CreatedAt time.Time `db:"created_at"`
+UpdatedAt time.Time `db:"updated_at"`
+}
+
+// Table returns the table name
+func ($?$ *$MODELNAME$) Table() string {
+	return "$TABLENAME$"
+}
+
+// GetAll gets all records from the database, using upper db
+func ($?$ *$MODELNAME$) GetAll(condition upperdb.Cond) ([]*$MODELNAME$, error) {
+	collection := upperDbSess.Collection($?$.Table())
+	var all []*$MODELNAME$
+
+	result := collection.Find(condition)
+	err := result.All(&all)
+	if err != nil {
+		return nil, err
+	}
+
+	return all, err
+}
+
+// Get gets one record from the database, by id, using upper db
+func ($?$ *$MODELNAME$) Get(id int) (*$MODELNAME$, error) {
+	var one $MODELNAME$
+	collection := upperDbSess.Collection($?$.Table())
+
+	result := collection.Find(upperdb.Cond{"id": id})
+	err := result.One(&one)
+	if err != nil {
+		return nil, err
+	}
+	return &one, nil
+}
+
+// Update updates a record in the database, using upper db
+func ($?$ *$MODELNAME$) Update(m $MODELNAME$) error {
+	m.UpdatedAt = time.Now()
+	collection := upperDbSess.Collection($?$.Table())
+	result := collection.Find(m.Id)
+	err := result.Update(&m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete deletes a record from the database by id, using upper db
+func ($?$ *$MODELNAME$) Delete(id int) error {
+	collection := upperDbSess.Collection($?$.Table())
+	result := collection.Find(id)
+	err := result.Delete()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Insert inserts a model into the database, using upper db
+func ($?$ *$MODELNAME$) Insert(m $MODELNAME$) (int, error) {
+	m.CreatedAt = time.Now()
+	m.UpdatedAt = time.Now()
+	collection := upperDbSess.Collection($?$.Table())
+	result, err := collection.Insert(m)
+	if err != nil {
+		return 0, err
+	}
+
+	id := getIdFromInsert(result.ID())
+
+	return id, nil
+}
+
+// Builder is an example of using upper's sql builder
+func ($?$ *$MODELNAME$) Builder(id int) ([]*$MODELNAME$, error) {
+	collection := upperDbSess.Collection($?$.Table())
+
+	var result []*$MODELNAME$
+
+	err := collection.Session().
+		SQL().
+		SelectFrom($?$.Table()).
+		Where("id > ?", id).
+		OrderBy("id").
+		All(&result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
