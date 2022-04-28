@@ -151,6 +151,7 @@ func (ds *DragonSpider) New(rp string) error {
 		CookieSecure:   ds.config.cookie.Secure,
 		CookieDomain:   ds.config.cookie.domain,
 		SessionType:    ds.config.sessionType,
+		DbPool:         ds.Db.Pool,
 	}
 
 	//create session
