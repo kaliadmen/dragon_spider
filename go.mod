@@ -3,8 +3,18 @@ module github.com/kaliadmen/dragon_spider
 go 1.17
 
 require (
+	github.com/CloudyKit/jet/v6 v6.1.0
+	github.com/alexedwards/scs/mysqlstore v0.0.0-20220216073957-c252878bcf5a
+	github.com/alexedwards/scs/postgresstore v0.0.0-20220216073957-c252878bcf5a
+	github.com/alexedwards/scs/sqlite3store v0.0.0-20220216073957-c252878bcf5a
+	github.com/alexedwards/scs/v2 v2.5.0
 	github.com/go-chi/chi/v5 v5.0.7
+	github.com/go-sql-driver/mysql v1.6.0
+	github.com/golang-migrate/migrate/v4 v4.15.1
+	github.com/jackc/pgconn v1.11.0
+	github.com/jackc/pgx/v4 v4.15.0
 	github.com/joho/godotenv v1.4.0
+	github.com/mattn/go-sqlite3 v1.14.12
 )
 
 require (
@@ -19,7 +29,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.11.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
