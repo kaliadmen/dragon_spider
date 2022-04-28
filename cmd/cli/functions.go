@@ -77,5 +77,9 @@ func showHelp() {
 	migrate n[int]         - runs n number of migrations, migrates down if negative number is passed
 	migrate reset          -runs all down migration in reverse, and runs all up migrations
 	make migrations <name> -creates an up and down migration in migrations directory
-	make auth              -creates migrations, models, and middleware for authentication, and runs migrations`)
+	make auth              -creates migrations, models, and middleware for authentication, and runs migrations
+	make handler <name>    -creates a bare handler in handlers directory
+	make model <name>      -creates a bare model in data directory
+	make session           - creates a database table for session store
+`)
 }
