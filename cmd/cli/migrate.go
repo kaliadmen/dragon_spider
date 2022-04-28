@@ -1,5 +1,30 @@
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
+func makeMigrations(name string) error {
+	dbType := ds.Db.DatabaseType
+	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), name)
+
+	upFile := ds.RootPath + "/migrations/" + filename + "." + dbType + ".up.sql"
+	downFile := ds.RootPath + "/migrations/" + filename + "." + dbType + ".down.sql"
+
+	err := makeFileFromTemplate("templates/migrations/migration."+dbType+".up.sql", upFile)
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/migrations/migration."+dbType+".down.sql", downFile)
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	return nil
+}
+
 func runMigration(migrationType, step string) error {
 	dsn := GetDSN()
 
