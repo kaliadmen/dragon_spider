@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func runAuth() error {
+func makeAuth() error {
 	//make migrations
 	dbType := ds.Db.DatabaseType
 	filename := fmt.Sprintf("%d_create_auth_tables", time.Now().UnixNano())
