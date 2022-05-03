@@ -13,7 +13,7 @@ var templateFs embed.FS
 func makeFileFromTemplate(templatePath, targetFile string) error {
 	//check if file doesn't exist
 	if fileExists(targetFile) {
-		return errors.New(targetFile + "already exist")
+		return errors.New(targetFile + " already exist")
 	}
 
 	data, err := templateFs.ReadFile(templatePath)

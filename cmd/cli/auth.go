@@ -49,7 +49,7 @@ func makeAuth() error {
 		gracefulExit(err)
 	}
 
-	color.Yellow(" -users, tokens and remember_token migrations created and excuted")
+	color.Yellow(" -users, tokens and remember_token migrations created and executed")
 	color.Yellow(" -user and token created")
 	color.Yellow(" -auth middleware created")
 	color.Yellow("")
