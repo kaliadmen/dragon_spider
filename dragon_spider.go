@@ -23,18 +23,19 @@ const version = "1.0.0"
 //DragonSpider is an overall type for the Dragon Spider package.
 //Members exported in this type are available to any application that uses it
 type DragonSpider struct {
-	AppName     string
-	Debug       bool
-	Version     string
-	ErrorLog    *log.Logger
-	InfoLog     *log.Logger
-	Render      *render.Render
-	JetTemplate *jet.Set
-	Routes      *chi.Mux
-	Session     *scs.SessionManager
-	Db          Database
-	RootPath    string
-	config      config
+	AppName       string
+	Debug         bool
+	Version       string
+	ErrorLog      *log.Logger
+	InfoLog       *log.Logger
+	Render        *render.Render
+	JetTemplate   *jet.Set
+	Routes        *chi.Mux
+	Session       *scs.SessionManager
+	Db            Database
+	RootPath      string
+	config        config
+	EncryptionKey string
 }
 
 type config struct {
@@ -124,6 +125,7 @@ func (ds *DragonSpider) New(rp string) error {
 	ds.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 	ds.Version = version
 	ds.RootPath = rp
+	ds.EncryptionKey = os.Getenv("KEY")
 
 	//set config variables
 	ds.config = config{
