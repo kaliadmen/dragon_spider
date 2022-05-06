@@ -24,5 +24,8 @@ func (ds *DragonSpider) routes() http.Handler {
 	//use sessions
 	mux.Use(ds.SessionLoadAndSave)
 
+	//use csrf
+	mux.Use(ds.NoSurf)
+
 	return mux
 }

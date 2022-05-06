@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
 	"github.com/alexedwards/scs/v2"
+	"github.com/justinas/nosurf"
 	"html/template"
 	"log"
 	"net/http"
@@ -109,6 +110,7 @@ func (ren *Render) AddDefaultData(td *TemplateData, r *http.Request) *TemplateDa
 
 	td.Secure = ren.Secure
 	td.ServerName = ren.ServerName
+	td.CSRFToken = nosurf.Token(r)
 	td.Port = ren.Port
 
 	return td
