@@ -6,7 +6,7 @@ import (
 )
 
 func makeMigrations(name string) error {
-	dbType := ds.Db.DatabaseType
+	dbType := convertDbType(ds.Db.DatabaseType)
 	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), name)
 
 	upFile := ds.RootPath + "/migrations/" + filename + "." + dbType + ".up.sql"

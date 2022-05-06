@@ -7,7 +7,7 @@ import (
 
 func makeAuth() error {
 	//make migrations
-	dbType := ds.Db.DatabaseType
+	dbType := convertDbType(ds.Db.DatabaseType)
 	filename := fmt.Sprintf("%d_create_auth_tables", time.Now().UnixNano())
 	upFile := ds.RootPath + "/migrations/" + filename + ".up.sql"
 	downFile := ds.RootPath + "/migrations/" + filename + ".down.sql"

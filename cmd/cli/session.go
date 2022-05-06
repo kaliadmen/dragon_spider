@@ -7,18 +7,10 @@ import (
 )
 
 func makeSessionTable() error {
-	dbType := ds.Db.DatabaseType
+	dbType := convertDbType(ds.Db.DatabaseType)
 
 	if dbType == "" {
 		gracefulExit(errors.New("you need to set a session type in .env file first"))
-	}
-
-	if dbType == "mariadb" {
-		dbType = "mysql"
-	}
-
-	if dbType == "postgresql" {
-		dbType = "postgres"
 	}
 
 	fileName := fmt.Sprintf("%d_create_session_table", time.Now().UnixNano())

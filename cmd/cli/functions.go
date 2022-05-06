@@ -28,11 +28,7 @@ func setup() {
 }
 
 func GetDSN() string {
-	dbType := ds.Db.DatabaseType
-
-	if dbType == "pgx" {
-		dbType = "postgres"
-	}
+	dbType := convertDbType(ds.Db.DatabaseType)
 
 	switch dbType {
 
@@ -62,8 +58,11 @@ func GetDSN() string {
 	case "mysql":
 		return "mysql://" + ds.CreateDSN()
 
-	default:
+	case "sqlite":
 		return "sqlite3://" + ds.CreateDSN()
+
+	default:
+		return ""
 	}
 }
 
@@ -82,4 +81,20 @@ func showHelp() {
 	make model <name>      -creates a bare model in data directory
 	make session           - creates a database table for session store
 `)
+}
+
+func convertDbType(dbType string) string {
+	switch dbType {
+	case "sqlite", "sqlite3":
+		return "sqlite"
+
+	case "mariadb", "mysql":
+		return "mysql"
+
+	case "postgres", "postgresql", "pgx":
+		return "postgres"
+
+	default:
+		return ""
+	}
 }
