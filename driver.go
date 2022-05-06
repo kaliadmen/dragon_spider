@@ -15,6 +15,10 @@ func (ds *DragonSpider) OpenDb(dbType, dsn string) (*sql.DB, error) {
 		dbType = "pgx"
 	}
 
+	if strings.ToLower(dbType) == "mysql" || strings.ToLower(dbType) == "mariadb" {
+		dbType = "mysql"
+	}
+
 	if strings.ToLower(dbType) == "sqlite" {
 		dbType = "sqlite3"
 	}
