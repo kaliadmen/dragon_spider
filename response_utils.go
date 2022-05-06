@@ -3,7 +3,9 @@ package dragonSpider
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -26,6 +28,24 @@ func (ds *DragonSpider) WriteJSON(w http.ResponseWriter, status int, data interf
 	_, err = w.Write(out)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (ds *DragonSpider) ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
+	maxBytes := 1048576
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+
+	d := json.NewDecoder(r.Body)
+	err := d.Decode(data)
+	if err != nil {
+		return err
+	}
+
+	err = d.Decode(&struct{}{})
+	if err != io.EOF {
+		return errors.New("body can only contain one json value")
 	}
 
 	return nil

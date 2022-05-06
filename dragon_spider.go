@@ -6,7 +6,9 @@ import (
 	"github.com/CloudyKit/jet/v6"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
+	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
+	"github.com/kaliadmen/dragon_spider/cache"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
 	"log"
@@ -36,6 +38,7 @@ type DragonSpider struct {
 	RootPath      string
 	config        config
 	EncryptionKey string
+	Cache         cache.Cache
 }
 
 type config struct {
@@ -44,6 +47,7 @@ type config struct {
 	sessionType string
 	cookie      cookieConfig
 	database    databaseConfig
+	redis       redisConfig
 }
 
 //New creates application config, reads the .env file, populate Dragon Spider type bases on .env values
@@ -121,6 +125,12 @@ func (ds *DragonSpider) New(rp string) error {
 		}
 	}
 
+	if strings.ToLower(os.Getenv("CACHE")) == "redis" {
+		appRedisCache := ds.createRedisClientCache()
+		ds.Cache = appRedisCache
+
+	}
+
 	//set application variables
 	ds.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 	ds.Version = version
@@ -142,6 +152,11 @@ func (ds *DragonSpider) New(rp string) error {
 		database: databaseConfig{
 			dsn:      ds.CreateDSN(),
 			database: os.Getenv("DATABASE_TYPE"),
+		},
+		redis: redisConfig{
+			host:     os.Getenv("REDIS_HOST"),
+			password: os.Getenv("REDIS_PASSWORD"),
+			prefix:   os.Getenv("REDIS_PREFIX"),
 		},
 	}
 
@@ -205,6 +220,35 @@ func (ds *DragonSpider) createSqliteDb(path string) error {
 		}
 	}
 	return nil
+}
+
+//createRedisPool creates a redis database pool for cache
+func (ds *DragonSpider) createRedisPool() *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:     50,
+		MaxActive:   10000,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial(
+				"tcp",
+				ds.config.redis.host,
+				redis.DialPassword(ds.config.redis.password))
+		},
+		TestOnBorrow: func(conn redis.Conn, t time.Time) error {
+			_, err := conn.Do("PING")
+			return err
+		},
+	}
+}
+
+//createRedisClientCache creates a redis cache
+func (ds *DragonSpider) createRedisClientCache() *cache.RedisCache {
+	cacheClient := cache.RedisCache{
+		Connection: ds.createRedisPool(),
+		Prefix:     ds.config.redis.prefix,
+	}
+
+	return &cacheClient
 }
 
 //startLoggers creates and returns info logger and error logger
