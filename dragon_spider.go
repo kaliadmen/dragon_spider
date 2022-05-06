@@ -67,7 +67,6 @@ func (ds *DragonSpider) New(rp string) error {
 			"public",
 			"tmp",
 			"logs",
-			"sqlite",
 		},
 	}
 
@@ -89,12 +88,6 @@ func (ds *DragonSpider) New(rp string) error {
 		return err
 	}
 
-	//create sqlite database if it doesn't exist
-	err = ds.createSqliteDb(rp)
-	if err != nil {
-		return err
-	}
-
 	//create loggers
 	infoLog, errorLog := ds.startLoggers()
 	ds.InfoLog = infoLog
@@ -102,29 +95,21 @@ func (ds *DragonSpider) New(rp string) error {
 
 	//connect to a database
 	if os.Getenv("DATABASE_TYPE") != "" {
-		pool, err := ds.OpenDb(os.Getenv("DATABASE_TYPE"), ds.CreateDSN())
+		if os.Getenv("DATABASE_TYPE") == "sqlite" {
+			if os.Getenv("SQLITE_FILE") != "" {
+				//create sqlite database if it doesn't exist
+				err = ds.createSqliteDb(rp)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		err := ds.useDatabase(strings.ToLower(os.Getenv("DATABASE_TYPE")))
 		if err != nil {
-			errorLog.Println(err)
-			os.Exit(1)
+			ds.ErrorLog.Println(err)
 		}
-		ds.Db = Database{
-			DatabaseType: os.Getenv("DATABASE_TYPE"),
-			Pool:         pool,
-		}
-	} else {
-		err := os.Setenv("DATABASE_TYPE", "sqlite")
-		if err != nil {
-			return err
-		}
-		pool, err := ds.OpenDb(os.Getenv("DATABASE_TYPE"), ds.CreateDSN())
-		if err != nil {
-			errorLog.Println(err)
-			os.Exit(1)
-		}
-		ds.Db = Database{
-			DatabaseType: "sqlite",
-			Pool:         pool,
-		}
+
 	}
 
 	//create a redis cache
@@ -222,12 +207,30 @@ func (ds *DragonSpider) createDotEnv(path string) error {
 
 //createSqliteDb creates a sqlite database file
 func (ds *DragonSpider) createSqliteDb(path string) error {
+	err := ds.CreateDir(path + "/sqlite")
+	if err != nil {
+		return err
+	}
 	if !FileExists(path + "/sqlite/app.db") {
 		err := ds.CreateFile(fmt.Sprintf("%s/sqlite/app.db", path))
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (ds *DragonSpider) useDatabase(dbType string) error {
+	pool, err := ds.OpenDb(dbType, ds.CreateDSN())
+	if err != nil {
+		ds.ErrorLog.Println(err)
+		os.Exit(1)
+	}
+	ds.Db = Database{
+		DatabaseType: dbType,
+		Pool:         pool,
+	}
+
 	return nil
 }
 
