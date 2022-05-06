@@ -22,6 +22,8 @@ import (
 
 const version = "1.0.0"
 
+var appRedisCache *cache.RedisCache
+
 //DragonSpider is an overall type for the Dragon Spider package.
 //Members exported in this type are available to any application that uses it
 type DragonSpider struct {
@@ -125,8 +127,9 @@ func (ds *DragonSpider) New(rp string) error {
 		}
 	}
 
-	if strings.ToLower(os.Getenv("CACHE")) == "redis" {
-		appRedisCache := ds.createRedisClientCache()
+	//create a redis cache
+	if strings.ToLower(os.Getenv("CACHE")) == "redis" || os.Getenv("SESSION_TYPE") == "redis" {
+		appRedisCache = ds.createRedisClientCache()
 		ds.Cache = appRedisCache
 
 	}
@@ -168,7 +171,13 @@ func (ds *DragonSpider) New(rp string) error {
 		CookieSecure:   ds.config.cookie.Secure,
 		CookieDomain:   ds.config.cookie.domain,
 		SessionType:    ds.config.sessionType,
-		DbPool:         ds.Db.Pool,
+	}
+
+	switch ds.config.sessionType {
+	case "redis":
+		ses.RedisPool = appRedisCache.Connection
+	case "mysql", "sqlite", "postgres", "postgresql", "mariadb":
+		ses.DbPool = ds.Db.Pool
 	}
 
 	//create session
