@@ -14,6 +14,14 @@ import (
 func makeKey() error {
 	randKey := ds.RandomString(32)
 	color.Yellow("Random 32 character encryption key: %s", randKey)
+	err := autoAdd(randKey)
+	if err != nil {
+		gracefulExit(err)
+	}
+	return nil
+}
+
+func autoAdd(key string) error {
 	fmt.Println("Do you want to set this key in your env file? (y|n)")
 	reader := bufio.NewReader(os.Stdin)
 	res, _ := reader.ReadString('\n')
@@ -23,7 +31,7 @@ func makeKey() error {
 	switch res {
 
 	case "y", "Y", "yes", "Yes":
-		err := addKeyToEnv(randKey)
+		err := addKeyToEnv(key)
 		if err != nil {
 			gracefulExit(err)
 		}
@@ -33,7 +41,7 @@ func makeKey() error {
 		return nil
 
 	default:
-		color.Yellow("You may have to add the key manually! Key: %s", randKey)
+		color.Yellow("You may have to add the key manually! Key: %s", key)
 		return nil
 	}
 }
