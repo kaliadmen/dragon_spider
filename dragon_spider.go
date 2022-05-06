@@ -329,27 +329,56 @@ func (ds *DragonSpider) createRenderer() {
 
 func (ds *DragonSpider) CreateDSN() string {
 	var dsn string
+	dbHost := os.Getenv("DATABASE_HOST")
+	dbPort := os.Getenv("DATABASE_PORT")
+	dbUser := os.Getenv("DATABASE_USER")
+	dbPass := os.Getenv("DATABASE_PASSWORD")
+	dbName := os.Getenv("DATABASE_NAME")
+	sslMode := os.Getenv("DATABASE_SSL_MODE")
 	timeout := 5
 
 	switch strings.ToLower(os.Getenv("DATABASE_TYPE")) {
 	case "postgres", "postgresql":
 		dsn = fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=%s timezone=UTCtimeout=%d",
-			os.Getenv("DATABASE_HOST"),
-			os.Getenv("DATABASE_PORT"),
-			os.Getenv("DATABASE_USER"),
-			os.Getenv("DATABASE_NAME"),
-			os.Getenv("DATABASE_SSL_MODE"),
+			dbHost,
+			dbPort,
+			dbUser,
+			dbName,
+			sslMode,
 			timeout)
-		if os.Getenv("DATABASE_PASSWORD") != "" {
-			dsn = fmt.Sprintf("%s password=%s", dsn, os.Getenv("DATABASE_PASSWORD"))
+		if dbPass != "" {
+			dsn = fmt.Sprintf("%s password=%s", dsn, dbPass)
 		}
 
-	default:
+	case "mysql", "mariadb":
+		//username:password@protocol(address)/dbname?param=value
+		dsn = fmt.Sprintf("%s@tcp(%s:%s)/%s?tls=%s&timeout=%d",
+			dbUser,
+			dbHost,
+			dbPort,
+			dbName,
+			sslMode,
+			timeout)
+		if dbPass != "" {
+			dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?tls=%s&timeout=%ds",
+				dbUser,
+				dbPass,
+				dbHost,
+				dbPort,
+				dbName,
+				sslMode,
+				timeout)
+		}
+
+	case "sqlite":
 		if os.Getenv("SQLITE_FILE") != "" {
 			dsn = os.Getenv("SQLITE_FILE")
 		} else {
 			dsn = "sqlite/app.db"
 		}
+
+	default:
+		return dsn
 	}
 
 	return dsn
