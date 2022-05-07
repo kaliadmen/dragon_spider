@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"runtime"
+	"time"
 )
 
 const (
@@ -102,4 +105,18 @@ func (e *Encryption) Decrypt(encrypted string) (string, error) {
 	stream.XORKeyStream(ciphertext, ciphertext)
 
 	return fmt.Sprintf("%s", ciphertext), nil
+}
+
+func (ds *DragonSpider) LoadTime(start time.Time) {
+	elapsed := time.Since(start)
+	//get calling function name
+	pc, _, _, _ := runtime.Caller(1)
+	funcObj := runtime.FuncForPC(pc)
+
+	//regex for function name
+	nameRegex := regexp.MustCompile(`^.*\.(.*)$`)
+	funcName := nameRegex.ReplaceAllString(funcObj.Name(), "$1")
+
+	ds.InfoLog.Println(fmt.Sprintf(" \u001b[33mLoad Time\u001B[0m: \u001b[35m%s\u001B[0m took \u001b[32m%s\u001b[0m", funcName, elapsed))
+
 }
