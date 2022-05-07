@@ -168,8 +168,15 @@ func (ds *DragonSpider) New(rp string) error {
 	//create session
 	ds.Session = ses.InitSession()
 
-	var jetViews = jet.NewSet(jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rp)), jet.InDevelopmentMode())
-	ds.JetTemplate = jetViews
+	if ds.Debug {
+		var jetViews = jet.NewSet(
+			jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rp)), jet.InDevelopmentMode())
+		ds.JetTemplate = jetViews
+	} else {
+		var jetViews = jet.NewSet(
+			jet.NewOSFileSystemLoader(fmt.Sprintf("%s/views", rp)))
+		ds.JetTemplate = jetViews
+	}
 
 	//set up render engine
 	ds.createRenderer()
