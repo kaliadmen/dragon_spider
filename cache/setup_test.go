@@ -3,15 +3,19 @@ package cache
 import (
 	"fmt"
 	"github.com/alicebob/miniredis/v2"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/gomodule/redigo/redis"
+	"log"
 	"os"
 	"testing"
 	"time"
 )
 
 var redisTestCache RedisCache
+var badgerTestCache BadgerCache
 
 func TestMain(m *testing.M) {
+	//setup for redis test
 	mini, err := miniredis.Run()
 	if err != nil {
 		panic(err)
@@ -19,6 +23,7 @@ func TestMain(m *testing.M) {
 
 	defer mini.Close()
 
+	//create a redis pool using miniredis
 	pool := redis.Pool{
 		Dial: func() (redis.Conn, error) {
 			return redis.Dial("tcp", mini.Addr())
@@ -38,6 +43,27 @@ func TestMain(m *testing.M) {
 			return
 		}
 	}(redisTestCache.Connection)
+
+	//setup for badger db
+	//remove old badger test database
+	_ = os.RemoveAll("./testdata/tmp/badger")
+
+	//create directories
+	if _, err := os.Stat("./testdata/tmp/"); os.IsNotExist(err) {
+		err := os.Mkdir("./testdata/tmp/", 0755)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	err = os.MkdirAll("./testdata/tmp/badger", 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//create new badger database and cache
+	db, _ := badger.Open(badger.DefaultOptions("./testdata/tmp/badger"))
+	badgerTestCache.Connection = db
 
 	os.Exit(m.Run())
 }

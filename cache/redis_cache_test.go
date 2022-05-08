@@ -53,6 +53,10 @@ func TestRedisCache_Get(t *testing.T) {
 }
 
 func TestRedisCache_Set(t *testing.T) {
+	if err := redisTestCache.Set("", ""); err == nil {
+		t.Error("set allowed a blank entry")
+	}
+
 	err := redisTestCache.Set("foo", "bar", 1000)
 	if err != nil {
 		t.Error(err)
