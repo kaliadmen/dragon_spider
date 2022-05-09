@@ -2,11 +2,13 @@ package session
 
 import (
 	"database/sql"
+	"github.com/alexedwards/scs/badgerstore"
 	"github.com/alexedwards/scs/mysqlstore"
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/redisstore"
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
+	"github.com/dgraph-io/badger"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gomodule/redigo/redis"
 	_ "github.com/mattn/go-sqlite3"
@@ -17,14 +19,15 @@ import (
 )
 
 type Session struct {
-	CookieName     string
-	CookieLifetime string
-	CookiePersist  string
-	CookieSecure   string
-	CookieDomain   string
-	SessionType    string
-	DbPool         *sql.DB
-	RedisPool      *redis.Pool
+	CookieName       string
+	CookieLifetime   string
+	CookiePersist    string
+	CookieSecure     string
+	CookieDomain     string
+	SessionType      string
+	DbPool           *sql.DB
+	RedisPool        *redis.Pool
+	BadgerConnection *badger.DB
 }
 
 func (s *Session) InitSession() *scs.SessionManager {
@@ -58,6 +61,8 @@ func (s *Session) InitSession() *scs.SessionManager {
 	switch strings.ToLower(s.SessionType) {
 	case "redis":
 		session.Store = redisstore.New(s.RedisPool)
+	case "badger":
+		session.Store = badgerstore.New(s.BadgerConnection)
 	case "mysql", "mariadb":
 		session.Store = mysqlstore.New(s.DbPool)
 

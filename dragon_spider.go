@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
 	"github.com/alexedwards/scs/v2"
+	"github.com/dgraph-io/badger"
 	"github.com/go-chi/chi/v5"
 	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
+	"github.com/robfig/cron/v3"
 	"log"
 	"net/http"
 	"os"
@@ -23,6 +25,9 @@ import (
 const version = "1.0.0"
 
 var appRedisCache *cache.RedisCache
+var redisPool *redis.Pool
+var appBadgerCache *cache.BadgerCache
+var badgerConnection *badger.DB
 
 //DragonSpider is an overall type for the Dragon Spider package.
 //Members exported in this type are available to any application that uses it
@@ -41,6 +46,7 @@ type DragonSpider struct {
 	config        config
 	EncryptionKey string
 	Cache         cache.Cache
+	Scheduler     *cron.Cron
 }
 
 type config struct {
@@ -88,6 +94,12 @@ func (ds *DragonSpider) New(rp string) error {
 		return err
 	}
 
+	//set application variables
+	ds.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+	ds.Version = version
+	ds.RootPath = rp
+	ds.EncryptionKey = os.Getenv("KEY")
+
 	//create loggers
 	infoLog, errorLog := ds.startLoggers()
 	ds.InfoLog = infoLog
@@ -112,18 +124,31 @@ func (ds *DragonSpider) New(rp string) error {
 
 	}
 
-	//create a redis cache
+	//initialize scheduler
+	scheduler := cron.New()
+	ds.Scheduler = scheduler
+
+	//create a cache
 	if strings.ToLower(os.Getenv("CACHE")) == "redis" || os.Getenv("SESSION_TYPE") == "redis" {
 		appRedisCache = ds.createRedisClientCache()
 		ds.Cache = appRedisCache
-
+		redisPool = appRedisCache.Connection
 	}
 
-	//set application variables
-	ds.Debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
-	ds.Version = version
-	ds.RootPath = rp
-	ds.EncryptionKey = os.Getenv("KEY")
+	if strings.ToLower(os.Getenv("CACHE")) == "badger" || os.Getenv("SESSION_TYPE") == "badger" {
+		appBadgerCache = ds.createBadgerClientCache()
+		ds.Cache = appBadgerCache
+		badgerConnection = appBadgerCache.Connection
+
+		//garbage collection
+		_, err := ds.Scheduler.AddFunc("@daily", func() {
+			_ = appBadgerCache.Connection.RunValueLogGC(0.7)
+		})
+		if err != nil {
+			return err
+		}
+
+	}
 
 	//set config variables
 	ds.config = config{
@@ -144,7 +169,7 @@ func (ds *DragonSpider) New(rp string) error {
 		redis: redisConfig{
 			host:     os.Getenv("REDIS_HOST"),
 			password: os.Getenv("REDIS_PASSWORD"),
-			prefix:   os.Getenv("REDIS_PREFIX"),
+			prefix:   os.Getenv("CACHE_PREFIX"),
 		},
 	}
 
@@ -161,6 +186,10 @@ func (ds *DragonSpider) New(rp string) error {
 	switch ds.config.sessionType {
 	case "redis":
 		ses.RedisPool = appRedisCache.Connection
+
+	case "badger":
+		ses.BadgerConnection = appBadgerCache.Connection
+
 	case "mysql", "sqlite", "postgres", "postgresql", "mariadb":
 		ses.DbPool = ds.Db.Pool
 	}
@@ -214,11 +243,11 @@ func (ds *DragonSpider) createDotEnv(path string) error {
 
 //createSqliteDb creates a sqlite database file
 func (ds *DragonSpider) createSqliteDb(path string) error {
-	err := ds.CreateDir(path + "/sqlite")
+	err := ds.CreateDir(path + "/tmp/sqlite")
 	if err != nil {
 		return err
 	}
-	if !FileExists(path + "/sqlite/app.db") {
+	if !FileExists(path + "tmp/sqlite/app.db") {
 		err := ds.CreateFile(fmt.Sprintf("%s/sqlite/app.db", path))
 		if err != nil {
 			return err
@@ -260,11 +289,47 @@ func (ds *DragonSpider) createRedisPool() *redis.Pool {
 	}
 }
 
+//createBadgerConnection creates a new connection to badger db
+func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
+	if ds.Debug {
+		fmt.Println(ds.Debug)
+		db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/tmp/badger"))
+		if err != nil {
+			return nil, err
+		}
+
+		return db, nil
+	}
+
+	db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/tmp/badger").WithLogger(nil))
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
 //createRedisClientCache creates a redis cache
 func (ds *DragonSpider) createRedisClientCache() *cache.RedisCache {
 	cacheClient := cache.RedisCache{
 		Connection: ds.createRedisPool(),
 		Prefix:     ds.config.redis.prefix,
+	}
+
+	return &cacheClient
+}
+
+//createBadgerClientCache creates a badger db cache
+func (ds *DragonSpider) createBadgerClientCache() *cache.BadgerCache {
+	connection, err := ds.createBadgerConnection()
+	if err != nil {
+		ds.ErrorLog.Println("Couldn't create badger connection", err)
+		return nil
+	}
+
+	cacheClient := cache.BadgerCache{
+		Connection: connection,
+		Prefix:     os.Getenv("CACHE_PREFIX"),
 	}
 
 	return &cacheClient
@@ -304,12 +369,33 @@ func (ds *DragonSpider) ListenAndServe() {
 		WriteTimeout: 600 * time.Second,
 	}
 
-	defer func(Pool *sql.DB) {
-		err := Pool.Close()
-		if err != nil {
+	//close database and cache connections
+	if ds.Db.Pool != nil {
+		defer func(Pool *sql.DB) {
+			err := Pool.Close()
+			if err != nil {
+				ds.ErrorLog.Println("Could not close database connection", err)
+			}
+		}(ds.Db.Pool)
+	}
 
-		}
-	}(ds.Db.Pool)
+	if redisPool != nil {
+		defer func(redisPool *redis.Pool) {
+			err := redisPool.Close()
+			if err != nil {
+				ds.ErrorLog.Println("Could not close redis connection", err)
+			}
+		}(redisPool)
+	}
+
+	if badgerConnection != nil {
+		defer func(badgerConnection *badger.DB) {
+			err := badgerConnection.Close()
+			if err != nil {
+				ds.ErrorLog.Println("Could not close badger db connection", err)
+			}
+		}(badgerConnection)
+	}
 
 	ds.InfoLog.Printf("Listening on port: %s", os.Getenv("PORT"))
 
@@ -381,7 +467,7 @@ func (ds *DragonSpider) CreateDSN() string {
 		if os.Getenv("SQLITE_FILE") != "" {
 			dsn = os.Getenv("SQLITE_FILE")
 		} else {
-			dsn = "sqlite/app.db"
+			dsn = ds.RootPath + "/tmp/sqlite/app.db"
 		}
 
 	default:
