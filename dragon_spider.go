@@ -28,6 +28,7 @@ var appRedisCache *cache.RedisCache
 var redisPool *redis.Pool
 var appBadgerCache *cache.BadgerCache
 var badgerConnection *badger.DB
+var logFile *os.File
 
 //DragonSpider is an overall type for the Dragon Spider package.
 //Members exported in this type are available to any application that uses it
@@ -101,9 +102,10 @@ func (ds *DragonSpider) New(rp string) error {
 	ds.EncryptionKey = os.Getenv("KEY")
 
 	//create loggers
-	infoLog, errorLog := ds.startLoggers()
+	infoLog, errorLog, file := ds.startLoggers()
 	ds.InfoLog = infoLog
 	ds.ErrorLog = errorLog
+	logFile = file
 
 	//connect to a database
 	if os.Getenv("DATABASE_TYPE") != "" {
@@ -316,25 +318,42 @@ func (ds *DragonSpider) createBadgerClientCache() *cache.BadgerCache {
 }
 
 //startLoggers creates and returns info logger and error logger
-func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger) {
+func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger, *os.File) {
 	//TODO log info and error to files
 	var infoLog *log.Logger
 	var errorLog *log.Logger
+	var loggerFile *os.File
 
 	currentOS := runtime.GOOS
 
-	//add color to log output if running on linux system
-	if currentOS == "linux" {
-		infoLog = log.New(os.Stdout, "\033[33mINFO\033[0m:\t", log.Ldate|log.Ltime)
-		errorLog = log.New(os.Stdout, "\033[31mERROR\033[0m:\t", log.Ldate|log.Ltime|log.Lshortfile)
+	switch ds.Debug {
+	case false:
+		file, err := os.OpenFile(ds.RootPath+"/logs/appLog.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			_ = fmt.Sprintf("error opening file: %v", err)
+		}
 
-		return infoLog, errorLog
+		infoLog = log.New(file, "INFO:\t", log.Ldate|log.Ltime)
+		errorLog = log.New(file, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+		logFile = file
+
+		return infoLog, errorLog, loggerFile
+
+	default:
+		//add color to log output if running on linux system
+		if currentOS == "linux" {
+			infoLog = log.New(os.Stdout, "\033[33mINFO\033[0m:\t", log.Ldate|log.Ltime)
+			errorLog = log.New(os.Stdout, "\033[31mERROR\033[0m:\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+			return infoLog, errorLog, nil
+		}
+
+		infoLog = log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
+		errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+		return infoLog, errorLog, nil
+
 	}
-
-	infoLog = log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
-	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-
-	return infoLog, errorLog
 
 }
 
@@ -375,6 +394,15 @@ func (ds *DragonSpider) ListenAndServe() {
 				ds.ErrorLog.Println("Could not close badger db connection", err)
 			}
 		}(badgerConnection)
+	}
+
+	if logFile != nil {
+		defer func(logFile *os.File) {
+			err := logFile.Close()
+			if err != nil {
+				ds.ErrorLog.Println("Could not close log file", err)
+			}
+		}(logFile)
 	}
 
 	ds.InfoLog.Printf("Listening on port: %s", os.Getenv("PORT"))
