@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 	"github.com/alicebob/miniredis/v2"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger"
 	"github.com/gomodule/redigo/redis"
 	"log"
 	"os"
@@ -64,6 +64,7 @@ func TestMain(m *testing.M) {
 	//create new badger database and cache
 	db, _ := badger.Open(badger.DefaultOptions("./testdata/tmp/badger"))
 	badgerTestCache.Connection = db
+	badgerTestCache.Prefix = "test_dragon"
 
 	os.Exit(m.Run())
 }

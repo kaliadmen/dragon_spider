@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
+	"strings"
 )
 
 type RedisCache struct {
@@ -95,7 +96,12 @@ func (rc *RedisCache) Set(str string, value interface{}, expires ...int) error {
 }
 
 func (rc *RedisCache) Delete(str string) error {
-	key := fmt.Sprintf("%s:%s", rc.Prefix, str)
+	key := str
+	//add prefix to key if not already present
+	if strings.Split(key, ":")[0] != rc.Prefix {
+		key = fmt.Sprintf("%s:%s", rc.Prefix, key)
+	}
+
 	conn := rc.Connection.Get()
 	defer func(conn redis.Conn) {
 		err := conn.Close()
@@ -130,7 +136,7 @@ func (rc *RedisCache) DeleteByMatch(str string) error {
 	}
 
 	for _, x := range keys {
-		_, err := conn.Do("DEL", x)
+		err = rc.Delete(x)
 		if err != nil {
 			return err
 		}
@@ -156,7 +162,7 @@ func (rc *RedisCache) DeleteAll() error {
 	}
 
 	for _, x := range keys {
-		_, err := conn.Do("DEL", x)
+		err = rc.Delete(x)
 		if err != nil {
 			return err
 		}
