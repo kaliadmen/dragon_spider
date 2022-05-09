@@ -1,6 +1,8 @@
 package cache
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestBadgerCache_Has(t *testing.T) {
 	err := badgerTestCache.Delete("foo")

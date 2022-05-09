@@ -2,7 +2,8 @@ package cache
 
 import (
 	"errors"
-	"github.com/dgraph-io/badger/v3"
+	"fmt"
+	"github.com/dgraph-io/badger"
 	"time"
 )
 
@@ -21,6 +22,7 @@ func (bc *BadgerCache) Has(key string) (bool, error) {
 }
 
 func (bc *BadgerCache) Get(key string) (interface{}, error) {
+	key = fmt.Sprintf("%s:%s", bc.Prefix, key)
 	var fromCache []byte
 
 	err := bc.Connection.View(func(txn *badger.Txn) error {
@@ -56,6 +58,7 @@ func (bc *BadgerCache) Set(key string, value interface{}, expires ...int) error 
 	if key == "" || value == "" {
 		return errors.New("blank entries are not allowed")
 	}
+	key = fmt.Sprintf("%s:%s", bc.Prefix, key)
 
 	entry := Entry{}
 
@@ -83,6 +86,8 @@ func (bc *BadgerCache) Set(key string, value interface{}, expires ...int) error 
 }
 
 func (bc *BadgerCache) Delete(key string) error {
+	key = fmt.Sprintf("%s:%s", bc.Prefix, key)
+
 	err := bc.Connection.Update(func(txn *badger.Txn) error {
 		err := txn.Delete([]byte(key))
 		return err
@@ -92,7 +97,6 @@ func (bc *BadgerCache) Delete(key string) error {
 }
 
 func (bc *BadgerCache) DeleteByMatch(key string) error {
-
 	return bc.deleteByMatch(key)
 }
 
@@ -102,6 +106,7 @@ func (bc *BadgerCache) DeleteAll() error {
 }
 
 func (bc *BadgerCache) deleteByMatch(key string) error {
+	key = fmt.Sprintf("%s:%s", bc.Prefix, key)
 	//search cache for keys to be deleted
 	deletedKeys := func(keysToDelete [][]byte) error {
 		if err := bc.Connection.Update(func(txn *badger.Txn) error {
