@@ -36,6 +36,12 @@ func runMake(arg2, arg3 string) error {
 			gracefulExit(err)
 		}
 
+	case "database":
+		err := makeSqliteDb()
+		if err != nil {
+			gracefulExit(err)
+		}
+
 	case "migration":
 		if arg3 == "" {
 			gracefulExit(errors.New("migration must have a name"))

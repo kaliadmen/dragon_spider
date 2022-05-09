@@ -68,18 +68,19 @@ func GetDSN() string {
 
 func showHelp() {
 	color.Yellow(`Available commands:
-	help                   - show help commands
-	version	               - print application version
+	help                   -show help commands
+	version	               -print application version
 	migrate(up)            -runs all up migrations that have not been ran
 	migrate down           -reverses most recent migration
 	migrate down all       -runs all down migrations
-	migrate n[int]         - runs n number of migrations, migrates down if negative number is passed
+	migrate n[int]         -runs n number of migrations, migrates down if negative number is passed
 	migrate reset          -runs all down migration in reverse, and runs all up migrations
 	make migrations <name> -creates an up and down migration in migrations directory
 	make auth              -creates migrations, models, and middleware for authentication, and runs migrations
+	make database          -create a sqlite database in tmp directory
 	make handler <name>    -creates a bare handler in handlers directory
 	make model <name>      -creates a bare model in data directory
-	make session           - creates a database table for session store
+	make session           -creates a database table or cache entry for session store
 `)
 }
 

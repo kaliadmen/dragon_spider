@@ -107,16 +107,6 @@ func (ds *DragonSpider) New(rp string) error {
 
 	//connect to a database
 	if os.Getenv("DATABASE_TYPE") != "" {
-		if os.Getenv("DATABASE_TYPE") == "sqlite" {
-			if os.Getenv("SQLITE_FILE") != "" {
-				//create sqlite database if it doesn't exist
-				err = ds.createSqliteDb(rp)
-				if err != nil {
-					return err
-				}
-			}
-		}
-
 		err := ds.useDatabase(strings.ToLower(os.Getenv("DATABASE_TYPE")))
 		if err != nil {
 			ds.ErrorLog.Println(err)
@@ -242,24 +232,14 @@ func (ds *DragonSpider) createDotEnv(path string) error {
 }
 
 //createSqliteDb creates a sqlite database file
-func (ds *DragonSpider) createSqliteDb(path string) error {
-	err := ds.CreateDir(path + "/tmp/sqlite")
-	if err != nil {
-		return err
-	}
-	if !FileExists(path + "tmp/sqlite/app.db") {
-		err := ds.CreateFile(fmt.Sprintf("%s/sqlite/app.db", path))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func (ds *DragonSpider) useDatabase(dbType string) error {
 	pool, err := ds.OpenDb(dbType, ds.CreateDSN())
 	if err != nil {
 		ds.ErrorLog.Println(err)
+		if dbType == "sqlite" {
+			ds.InfoLog.Println("Check your env file or try running ./dragon_spider make database")
+		}
 		os.Exit(1)
 	}
 	ds.Db = Database{
