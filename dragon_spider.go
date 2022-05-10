@@ -10,6 +10,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
+	"github.com/kaliadmen/dragon_spider/mailer"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
 	"github.com/robfig/cron/v3"
@@ -48,6 +49,7 @@ type DragonSpider struct {
 	EncryptionKey string
 	Cache         cache.Cache
 	Scheduler     *cron.Cron
+	Mail          mailer.Mail
 }
 
 type config struct {
@@ -68,6 +70,7 @@ func (ds *DragonSpider) New(rp string) error {
 		dirNames: []string{
 			"handlers",
 			"middleware",
+			"mail",
 			"views",
 			"data",
 			"migrations",
@@ -100,6 +103,11 @@ func (ds *DragonSpider) New(rp string) error {
 	ds.Version = version
 	ds.RootPath = rp
 	ds.EncryptionKey = os.Getenv("KEY")
+
+	//set mailer
+	if os.Getenv("SMTP_PORT") != "" {
+		ds.Mail = ds.createMailer()
+	}
 
 	//create loggers
 	infoLog, errorLog, file := ds.startLoggers()
@@ -205,6 +213,13 @@ func (ds *DragonSpider) New(rp string) error {
 	//set routes
 	ds.Routes = ds.routes().(*chi.Mux)
 
+	//listen for mail on mail channel
+	if ds.Mail.Port != 0 {
+		go ds.Mail.ListenForMail()
+		ds.InfoLog.Println("Listening for mail on port", ds.Mail.Port)
+	} else {
+		ds.InfoLog.Println("No mailer port set in .env file")
+	}
 	return nil
 }
 
@@ -317,9 +332,31 @@ func (ds *DragonSpider) createBadgerClientCache() *cache.BadgerCache {
 	return &cacheClient
 }
 
+func (ds *DragonSpider) createMailer() mailer.Mail {
+	port, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
+	m := mailer.Mail{
+		Domain:      os.Getenv("MAIL_DOMAIN"),
+		Templates:   ds.RootPath + "/mail",
+		Host:        os.Getenv("SMTP_HOST"),
+		Port:        port,
+		Username:    os.Getenv("SMTP_USERNAME"),
+		Password:    os.Getenv("SMTP_PASSWORD"),
+		Encryption:  os.Getenv("SMTP_ENCRYPTION"),
+		FromAddress: os.Getenv("FROM_ADDRESS"),
+		FromName:    os.Getenv("FROM_NAME"),
+		Jobs:        make(chan mailer.Message, 20),
+		Results:     make(chan mailer.Result, 20),
+		API:         os.Getenv("MAILER_API"),
+		APIKey:      os.Getenv("MAILER_KEY"),
+		APIUrl:      os.Getenv("MAILER_URL"),
+	}
+
+	return m
+}
+
 //startLoggers creates and returns info logger and error logger
 func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger, *os.File) {
-	//TODO log info and error to files
+
 	var infoLog *log.Logger
 	var errorLog *log.Logger
 	var loggerFile *os.File
