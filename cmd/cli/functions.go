@@ -81,6 +81,7 @@ func showHelp() {
 	make handler <name>    -creates a bare handler in handlers directory
 	make model <name>      -creates a bare model in data directory
 	make session           -creates a database table or cache entry for session store
+	make mail <name>       -creates a html and plaintext email template in mail directory
 `)
 }
 

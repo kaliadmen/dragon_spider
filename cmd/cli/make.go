@@ -42,6 +42,16 @@ func runMake(arg2, arg3 string) error {
 			gracefulExit(err)
 		}
 
+	case "mail":
+		if arg3 == "" {
+			gracefulExit(errors.New("mail template must have a name"))
+		}
+
+		err := makeMail(arg3)
+		if err != nil {
+			gracefulExit(err)
+		}
+
 	case "migration":
 		if arg3 == "" {
 			gracefulExit(errors.New("migration must have a name"))
