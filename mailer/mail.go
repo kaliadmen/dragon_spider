@@ -142,7 +142,7 @@ func (m *Mail) buildHTMLMessage(msg Message) (string, error) {
 }
 
 func (m *Mail) buildPlainTextMessage(msg Message) (string, error) {
-	templateToRender := fmt.Sprintf("%s/%s.plain_text.tmpl", m.Templates, msg.Template)
+	templateToRender := fmt.Sprintf("%s/%s.txt.tmpl", m.Templates, msg.Template)
 
 	tmpl, err := template.New("email-html").ParseFiles(templateToRender)
 	if err != nil {
@@ -203,9 +203,29 @@ func (m *Mail) SendUsingAPI(msg Message) error {
 	if msg.FromName == "" {
 		msg.FromName = m.FromName
 	}
-	//TODO: add support for third party mail api
+
 	switch m.API {
+	case "mailgun":
+		err := m.useMailgun(msg)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	case "sparkpost":
+		err := m.useSparkpost(msg)
+		if err != nil {
+			return err
+		}
+		return nil
+
+	case "sendgrid":
+		err := m.useSendgrid(msg)
+		if err != nil {
+			return err
+		}
+		return nil
 	default:
-		return fmt.Errorf("unsupported api %s: ", m.API)
+		return fmt.Errorf("unsupported api %s; mailgun, sparkpost, or sendgrid are supported", m.API)
 	}
 }

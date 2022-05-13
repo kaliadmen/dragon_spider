@@ -365,7 +365,7 @@ func (ds *DragonSpider) startLoggers() (*log.Logger, *log.Logger, *os.File) {
 
 	switch ds.Debug {
 	case false:
-		file, err := os.OpenFile(ds.RootPath+"/logs/appLog.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		file, err := os.OpenFile(ds.RootPath+"/logs/appLog.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			_ = fmt.Sprintf("error opening file: %v", err)
 		}
