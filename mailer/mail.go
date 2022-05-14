@@ -195,15 +195,7 @@ func (m *Mail) getEncryption(encryption string) mail.Encryption {
 	}
 }
 
-func (m *Mail) SendUsingAPI(msg Message) error {
-	if msg.From == "" {
-		msg.From = m.FromAddress
-	}
-
-	if msg.FromName == "" {
-		msg.FromName = m.FromName
-	}
-
+func (m *Mail) apiSelector(msg Message) error {
 	switch m.API {
 	case "mailgun":
 		err := m.useMailgun(msg)
@@ -225,7 +217,25 @@ func (m *Mail) SendUsingAPI(msg Message) error {
 			return err
 		}
 		return nil
+
 	default:
 		return fmt.Errorf("unsupported api %s; mailgun, sparkpost, or sendgrid are supported", m.API)
 	}
+}
+
+func (m *Mail) SendUsingAPI(msg Message) error {
+	if msg.From == "" {
+		msg.From = m.FromAddress
+	}
+
+	if msg.FromName == "" {
+		msg.FromName = m.FromName
+	}
+
+	err := m.apiSelector(msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
