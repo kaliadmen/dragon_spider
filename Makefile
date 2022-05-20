@@ -13,3 +13,7 @@ coverage:
 ## build_cli: builds the command line tool dragon_spider and copies it to myapp
 build_cli:
 	@go build -o ../myApp/dragon_spider ./cmd/cli
+
+## build_cli: builds the command line tool dist directory
+build:
+	@go build -o ./dist/dragon_spider ./cmd/cli

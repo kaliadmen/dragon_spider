@@ -30,6 +30,18 @@ func (ds *DragonSpider) CreateDir(path string) error {
 	return nil
 }
 
+func (ds *DragonSpider) CreateDirs(path string) error {
+	const mode = 0755
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.MkdirAll(path, mode)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ds *DragonSpider) CreateFile(path string) error {
 	if !FileExists(path) {
 		var file, err = os.Create(path)
