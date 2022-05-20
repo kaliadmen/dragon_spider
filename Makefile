@@ -17,3 +17,7 @@ build_cli:
 ## build_cli: builds the command line tool dist directory
 build:
 	@go build -o ./dist/dragon_spider ./cmd/cli
+
+## install_cli: builds the command line tool dragon_spider and installs it to ~/go/bin
+install_cli:
+	@go build -o ~/go/bin/dragon_spider ./cmd/cli
