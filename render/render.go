@@ -32,16 +32,18 @@ type TemplateData struct {
 	Port            string
 	ServerName      string
 	Secure          bool
+	Error           string
+	Flash           string
 }
 
 //Page renders templates using the render engine set in the Renderer
-func (ren *Render) Page(w http.ResponseWriter, r *http.Request, view string, variables, data interface{}) error {
-	switch strings.ToLower(ren.Renderer) {
+func (r *Render) Page(w http.ResponseWriter, req *http.Request, view string, variables, data interface{}) error {
+	switch strings.ToLower(r.Renderer) {
 	case "go":
-		return ren.UseGo(w, r, view, data)
+		return r.UseGo(w, req, view, data)
 	case "jet":
 
-		return ren.UseJet(w, r, view, variables, data)
+		return r.UseJet(w, req, view, variables, data)
 	default:
 
 	}
@@ -50,8 +52,8 @@ func (ren *Render) Page(w http.ResponseWriter, r *http.Request, view string, var
 }
 
 //UseGo uses go template engine to render template pages
-func (ren *Render) UseGo(w http.ResponseWriter, r *http.Request, view string, data interface{}) error {
-	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/views/%s.page.tmpl", ren.RootPath, view))
+func (r *Render) UseGo(w http.ResponseWriter, req *http.Request, view string, data interface{}) error {
+	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/views/%s.page.tmpl", r.RootPath, view))
 	if err != nil {
 		return err
 	}
@@ -70,7 +72,7 @@ func (ren *Render) UseGo(w http.ResponseWriter, r *http.Request, view string, da
 }
 
 //UseJet uses jet engine to render template pages
-func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName string, variables, data interface{}) error {
+func (r *Render) UseJet(w http.ResponseWriter, req *http.Request, templateName string, variables, data interface{}) error {
 	var vars jet.VarMap
 
 	//format variables for jet
@@ -86,9 +88,9 @@ func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName s
 		td = data.(*TemplateData)
 	}
 
-	td = ren.AddDefaultData(td, r)
+	td = r.AddDefaultData(td, req)
 
-	tmpl, err := ren.JetTemplate.GetTemplate(fmt.Sprintf("%s.jet", templateName))
+	tmpl, err := r.JetTemplate.GetTemplate(fmt.Sprintf("%s.jet", templateName))
 	if err != nil {
 		return err
 	}
@@ -102,16 +104,18 @@ func (ren *Render) UseJet(w http.ResponseWriter, r *http.Request, templateName s
 
 }
 
-func (ren *Render) AddDefaultData(td *TemplateData, r *http.Request) *TemplateData {
+func (r *Render) AddDefaultData(td *TemplateData, req *http.Request) *TemplateData {
 	//check if user is authenticated
-	if ren.Session.Exists(r.Context(), "userId") {
+	if r.Session.Exists(req.Context(), "userId") {
 		td.IsAuthenticated = true
 	}
 
-	td.Secure = ren.Secure
-	td.ServerName = ren.ServerName
-	td.CSRFToken = nosurf.Token(r)
-	td.Port = ren.Port
+	td.Secure = r.Secure
+	td.ServerName = r.ServerName
+	td.CSRFToken = nosurf.Token(req)
+	td.Port = r.Port
+	td.Error = r.Session.PopString(req.Context(), "error")
+	td.Flash = r.Session.PopString(req.Context(), "flash")
 
 	return td
 }
