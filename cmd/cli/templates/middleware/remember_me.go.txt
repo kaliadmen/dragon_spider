@@ -1,0 +1,86 @@
+package middleware
+
+import (
+	"fmt"
+	"myApp/data"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+)
+
+func (m *Middleware) RememberMe(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//is user logged in
+		if !m.App.Session.Exists(r.Context(), "userId") {
+			//user not logged in check for cookie
+			cookie, err := r.Cookie(fmt.Sprintf("_%s_remember_me", m.App.AppName))
+			if err != nil {
+				//no cookie
+				next.ServeHTTP(w, r)
+			} else {
+				key := cookie.Value
+				var u data.User
+
+				//does cookie have valid data
+				if len(key) > 0 {
+					split := strings.Split(key, "|")
+					uid, hash := split[0], split[1]
+					id, _ := strconv.Atoi(uid)
+					validHash := u.ValidateRememberToken(id, hash)
+					if !validHash {
+						m.deleteCookie(w, r)
+						m.App.Session.Put(r.Context(), "error", "You have been logged out from another device")
+						next.ServeHTTP(w, r)
+					} else {
+						//log user in
+						user, err := u.GetById(id)
+						if err != nil {
+							m.App.Session.Put(r.Context(), "error", "There is a problem with your log in")
+							m.App.ErrorLog.Println(err)
+							next.ServeHTTP(w, r)
+						}
+						m.App.Session.Put(r.Context(), "userId", user.Id)
+						m.App.Session.Put(r.Context(), "remember_token", hash)
+						next.ServeHTTP(w, r)
+					}
+				} else {
+					//cookie doesnt have valid data
+					m.deleteCookie(w, r)
+					next.ServeHTTP(w, r)
+				}
+
+			}
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+}
+
+func (m *Middleware) deleteCookie(w http.ResponseWriter, r *http.Request) {
+	_ = m.App.Session.RenewToken(r.Context())
+
+	newCookie := http.Cookie{
+		Name:     fmt.Sprintf("_%s_remember", m.App.AppName),
+		Value:    "",
+		Path:     "/",
+		Domain:   m.App.Session.Cookie.Domain,
+		Expires:  time.Now().Add(-100 * time.Hour),
+		MaxAge:   -1,
+		Secure:   m.App.Session.Cookie.Secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	}
+
+	http.SetCookie(w, &newCookie)
+	//log user out
+	m.App.Session.Remove(r.Context(), "userId")
+	err := m.App.Session.Destroy(r.Context())
+	if err != nil {
+		_ = m.App.Session.RenewToken(r.Context())
+		m.App.ErrorLog.Println(err)
+		return
+	}
+	_ = m.App.Session.RenewToken(r.Context())
+
+}

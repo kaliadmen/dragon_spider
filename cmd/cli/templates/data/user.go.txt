@@ -176,3 +176,12 @@ func (u *User) MatchPassword(text string) (bool, error) {
 
 	return true, nil
 }
+
+func (u *User) ValidateRememberToken(id int, token string) bool {
+	var rememberToken RememberToken
+	rt := RememberToken{}
+	collection := upperDbSess.Collection(rt.Table())
+	res := collection.Find(upperdb.Cond{"user_id": id, "remember_token": token})
+	err := res.One(&rememberToken)
+	return err == nil
+}

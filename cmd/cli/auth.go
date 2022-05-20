@@ -37,6 +37,16 @@ func makeAuth() error {
 		gracefulExit(err)
 	}
 
+	err = makeFileFromTemplate("templates/data/remember_me.go.txt", ds.RootPath+"/data/remember_me.go")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/handlers/auth_handlers.go.txt", ds.RootPath+"/handlers/auth_handlers.go")
+	if err != nil {
+		gracefulExit(err)
+	}
+
 	//copy middleware
 	err = makeFileFromTemplate("templates/middleware/auth_web.go.txt", ds.RootPath+"/middleware/auth_web.go")
 	if err != nil {
@@ -44,6 +54,41 @@ func makeAuth() error {
 	}
 
 	err = makeFileFromTemplate("templates/middleware/auth_api.go.txt", ds.RootPath+"/middleware/auth_api.go")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/middleware/remember_me.go.txt", ds.RootPath+"/middleware/remember_me.go")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/mailer/password_reset.html.tmpl", ds.RootPath+"/mail/password_reset.html.tmpl")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/mailer/password_reset.txt.tmpl", ds.RootPath+"/mail/password_reset.txt.tmpl")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/mailer/password_reset.html.tmpl", ds.RootPath+"/mail/password_reset.html.tmpl")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/views/forgot.jet.txt", ds.RootPath+"/views/forgot.jet")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/views/reset-password.jet.txt", ds.RootPath+"/views/reset-password.jet")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	err = makeFileFromTemplate("templates/views/login.jet.txt", ds.RootPath+"/views/login.jet")
 	if err != nil {
 		gracefulExit(err)
 	}
