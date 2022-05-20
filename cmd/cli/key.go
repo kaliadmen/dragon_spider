@@ -59,8 +59,8 @@ func addKeyToEnv(key string) error {
 	}
 
 	env := string(data)
-	sampleRegexp := regexp.MustCompile(`KEY=[a-zA-Z\d!@#$%?^&*()-_+{}]*`)
-	env = sampleRegexp.ReplaceAllString(env, "KEY="+key)
+	keyRegex := regexp.MustCompile(`KEY=[a-zA-Z\d!@#$%?^&*()-_+{}]*`)
+	env = keyRegex.ReplaceAllString(env, "KEY="+key)
 
 	err = ioutil.WriteFile(filePath, []byte(env), 0644)
 	if err != nil {

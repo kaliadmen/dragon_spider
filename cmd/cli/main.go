@@ -21,11 +21,21 @@ func main() {
 		gracefulExit(err)
 	}
 
-	setup()
+	setup(arg1, arg2)
 
 	switch strings.ToLower(arg1) {
 	case "help":
 		showHelp()
+
+	case "new":
+		if arg2 == "" {
+			gracefulExit(errors.New("new requires a name for the application"))
+		}
+
+		err := createApp(arg2)
+		if err != nil {
+			gracefulExit(err)
+		}
 
 	case "version":
 		color.Yellow("Application version: " + version)

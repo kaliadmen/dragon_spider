@@ -5,24 +5,28 @@ import (
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
-func setup() {
-	err := godotenv.Load()
-	if err != nil {
-		gracefulExit(err)
-	}
+func setup(arg1, arg2 string) {
+	if arg1 != "new" && arg1 != "version" && arg1 != "help" {
+		err := godotenv.Load()
+		if err != nil {
+			gracefulExit(err)
+		}
 
-	rootPath, err := os.Getwd()
-	if err != nil {
-		gracefulExit(err)
-	}
+		rootPath, err := os.Getwd()
+		if err != nil {
+			gracefulExit(err)
+		}
 
-	ds.RootPath = rootPath
-	if os.Getenv("DATABASE_TYPE") != "" {
-		ds.Db.DatabaseType = os.Getenv("DATABASE_TYPE")
-	} else {
-		ds.Db.DatabaseType = "sqlite"
+		ds.RootPath = rootPath
+		if os.Getenv("DATABASE_TYPE") != "" {
+			ds.Db.DatabaseType = os.Getenv("DATABASE_TYPE")
+		} else {
+			ds.Db.DatabaseType = "sqlite"
+		}
 	}
 
 }
@@ -98,5 +102,43 @@ func convertDbType(dbType string) string {
 
 	default:
 		return ""
+	}
+}
+
+func updateSourceFiles(path string, fi os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+
+	if fi.IsDir() {
+		return nil
+	}
+
+	matched, err := filepath.Match("*.go", fi.Name())
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		read, err := os.ReadFile(path)
+		if err != nil {
+			gracefulExit(err)
+		}
+		contents := strings.Replace(string(read), "myApp", appURL, -1)
+
+		err = os.WriteFile(path, []byte(contents), 0)
+		if err != nil {
+			gracefulExit(err)
+		}
+
+	}
+
+	return nil
+}
+
+func updateSource() {
+	err := filepath.Walk(".", updateSourceFiles)
+	if err != nil {
+		gracefulExit(err)
 	}
 }
