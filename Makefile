@@ -20,4 +20,4 @@ build:
 
 ## install_cli: builds the command line tool dragon_spider and installs it to ~/go/bin
 install_cli:
-	@go build -o ~/go/bin/dragon_spider ./cmd/cli
+	@go build -o ~/go/go1.18.1/bin/dragon_spider ./cmd/cli
