@@ -50,6 +50,7 @@ type DragonSpider struct {
 	Cache         cache.Cache
 	Scheduler     *cron.Cron
 	Mail          mailer.Mail
+	Server        Server
 }
 
 type config struct {
@@ -59,6 +60,13 @@ type config struct {
 	cookie      cookieConfig
 	database    databaseConfig
 	redis       redisConfig
+}
+
+type Server struct {
+	ServerName string
+	Port       string
+	Secure     bool
+	URL        string
 }
 
 //New creates application config, reads the .env file, populate Dragon Spider type bases on .env values
@@ -171,6 +179,18 @@ func (ds *DragonSpider) New(rp string) error {
 			password: os.Getenv("REDIS_PASSWORD"),
 			prefix:   os.Getenv("CACHE_PREFIX"),
 		},
+	}
+	//set app server variables
+	secure := true
+	if strings.ToLower(os.Getenv("SECURE")) == "false" {
+		secure = false
+	}
+
+	ds.Server = Server{
+		ServerName: os.Getenv("SERVER_NAME"),
+		Port:       os.Getenv("PORT"),
+		Secure:     secure,
+		URL:        os.Getenv("APP_URL"),
 	}
 
 	//set session configuration
@@ -289,7 +309,6 @@ func (ds *DragonSpider) createRedisPool() *redis.Pool {
 //createBadgerConnection creates a new connection to badger db
 func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
 	if ds.Debug {
-		fmt.Println(ds.Debug)
 		db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/tmp/badger"))
 		if err != nil {
 			return nil, err
