@@ -85,18 +85,26 @@ func (ds *DragonSpider) ErrorStatus(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (ds *DragonSpider) Error401(w http.ResponseWriter, r *http.Request) {
+func (ds *DragonSpider) ErrorUnauthorized(w http.ResponseWriter) {
 	ds.ErrorStatus(w, http.StatusUnauthorized)
 }
 
-func (ds *DragonSpider) Error403(w http.ResponseWriter, r *http.Request) {
+func (ds *DragonSpider) ErrorForbidden(w http.ResponseWriter) {
 	ds.ErrorStatus(w, http.StatusForbidden)
 }
 
-func (ds *DragonSpider) Error404(w http.ResponseWriter, r *http.Request) {
+func (ds *DragonSpider) Error401(w http.ResponseWriter) {
+	ds.ErrorStatus(w, http.StatusUnauthorized)
+}
+
+func (ds *DragonSpider) Error403(w http.ResponseWriter) {
+	ds.ErrorStatus(w, http.StatusForbidden)
+}
+
+func (ds *DragonSpider) Error404(w http.ResponseWriter) {
 	ds.ErrorStatus(w, http.StatusNotFound)
 }
 
-func (ds *DragonSpider) Error500(w http.ResponseWriter, r *http.Request) {
+func (ds *DragonSpider) Error500(w http.ResponseWriter) {
 	ds.ErrorStatus(w, http.StatusInternalServerError)
 }
