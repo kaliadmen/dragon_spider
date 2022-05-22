@@ -531,7 +531,7 @@ func (ds *DragonSpider) CreateDSN() string {
 		if os.Getenv("SQLITE_FILE") != "" {
 			dsn = os.Getenv("SQLITE_FILE")
 		} else {
-			dsn = ds.RootPath + "/tmp/sqlite/app.db"
+			dsn = ds.RootPath + "/db/sqlite/app.db"
 		}
 
 	default:
