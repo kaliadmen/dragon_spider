@@ -7,7 +7,7 @@ import (
 	"github.com/CloudyKit/jet/v6"
 	"github.com/kaliadmen/dragon_spider/mailer"
 	"github.com/kaliadmen/dragon_spider/urlsigner"
-	"myApp/data"
+	"${APP_NAME}/data"
 	"net/http"
 	"time"
 )

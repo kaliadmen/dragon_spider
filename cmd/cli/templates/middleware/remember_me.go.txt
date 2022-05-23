@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"fmt"
-	"myApp/data"
+	"${APP_NAME}/data"
 	"net/http"
 	"strconv"
 	"strings"

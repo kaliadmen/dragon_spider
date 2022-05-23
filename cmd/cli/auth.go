@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -42,7 +44,20 @@ func makeAuth() error {
 		gracefulExit(err)
 	}
 
-	err = makeFileFromTemplate("templates/handlers/auth_handlers.go.txt", ds.RootPath+"/handlers/auth_handlers.go")
+	data, err := templateFs.ReadFile("templates/handlers/auth_handlers.go.txt")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	file := string(data)
+
+	if appURL == "" && os.Getenv("APP_GITHUB_URL") != "" {
+		appURL = os.Getenv("APP_GITHUB_URL")
+	}
+
+	file = strings.ReplaceAll(file, "${APP_NAME}", appURL)
+
+	err = copyDataToFile([]byte(file), ds.RootPath+"/handlers/auth_handlers.go")
 	if err != nil {
 		gracefulExit(err)
 	}
@@ -58,7 +73,20 @@ func makeAuth() error {
 		gracefulExit(err)
 	}
 
-	err = makeFileFromTemplate("templates/middleware/remember_me.go.txt", ds.RootPath+"/middleware/remember_me.go")
+	data, err = templateFs.ReadFile("templates/middleware/remember_me.go.txt")
+	if err != nil {
+		gracefulExit(err)
+	}
+
+	file = string(data)
+
+	if appURL == "" && os.Getenv("APP_GITHUB_URL") != "" {
+		appURL = os.Getenv("APP_GITHUB_URL")
+	}
+
+	file = strings.ReplaceAll(file, "${APP_NAME}", appURL)
+
+	err = copyDataToFile([]byte(file), ds.RootPath+"/middleware/remember_me.go")
 	if err != nil {
 		gracefulExit(err)
 	}
@@ -69,11 +97,6 @@ func makeAuth() error {
 	}
 
 	err = makeFileFromTemplate("templates/mailer/password_reset.txt.tmpl", ds.RootPath+"/mail/password_reset.txt.tmpl")
-	if err != nil {
-		gracefulExit(err)
-	}
-
-	err = makeFileFromTemplate("templates/mailer/password_reset.html.tmpl", ds.RootPath+"/mail/password_reset.html.tmpl")
 	if err != nil {
 		gracefulExit(err)
 	}

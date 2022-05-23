@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"io"
 	"os"
 	"os/exec"
@@ -38,11 +37,7 @@ func createApp(appName string) error {
 	//git clone bare application
 	color.Green("\tCloning from git repository")
 	_, err := git.PlainClone("./"+appName, false, &git.CloneOptions{
-		URL: "https://github.com/kaliadmen/dragon_spider_app.git",
-		Auth: &http.BasicAuth{
-			Username: "kaliadmen",
-			Password: "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",
-		},
+		URL:      "https://github.com/kaliadmen/dragon_spider_skeleton.git",
 		Progress: os.Stdout,
 		Depth:    1,
 	})
@@ -65,6 +60,7 @@ func createApp(appName string) error {
 
 	env := string(data)
 	env = strings.ReplaceAll(env, "${APP_NAME}", appName)
+	env = strings.ReplaceAll(env, "${APP_GITHUB_URL}", appURL)
 	env = strings.ReplaceAll(env, "${KEY}", ds.RandomString(32))
 
 	err = copyDataToFile([]byte(env), fmt.Sprintf("./%s/.env", appName))
@@ -113,6 +109,7 @@ func createApp(appName string) error {
 
 	_ = os.Remove("./" + appName + "/Makefile.linux")
 	_ = os.Remove("./" + appName + "/Makefile.windows")
+
 	//update go.mod
 	color.Yellow("\tCreating a go.mod file...")
 	_ = os.Remove("./" + appName + "/go.mod")
