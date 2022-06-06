@@ -3,44 +3,100 @@ package urlsigner
 import (
 	"fmt"
 	goalone "github.com/bwmarrin/go-alone"
+	"net/url"
 	"strings"
 	"time"
 )
 
-type Signer struct {
-	Secret []byte
+// Signature is the type for the package. Secret is the urlsigner secret,
+// a hard to guess string used to sign things. The secret must not exceed 64 characters.
+type Signature struct {
+	Secret string
 }
 
-func (s *Signer) GenerateTokenFromString(data string) string {
-	var urlToSign string
-
-	crypt := goalone.New(s.Secret, goalone.Timestamp)
-
-	if strings.Contains(data, "?") {
-		urlToSign = fmt.Sprintf("%s&hash=", data)
-	} else {
-		urlToSign = fmt.Sprintf("%s?hash=", data)
+// SignUrl generates a signed url and returns it, stripping off http:// and https://
+func (s *Signature) SignUrl(data string) (string, error) {
+	_, err := url.ParseRequestURI(data)
+	if err != nil {
+		return "", err
 	}
 
-	tokenBytes := crypt.Sign([]byte(urlToSign))
+	var (
+		stringToSign string
+		urlToSign    string
+	)
+
+	ex := strings.Split(data, "//")
+	exploded := strings.Split(ex[1], "/")
+	domain := exploded[0]
+	exploded[0] = ""
+
+	if strings.Contains(ex[1], "-") {
+		stringToSign = strings.Join(exploded, "/")
+	} else {
+		stringToSign = strings.Join(exploded, "/")
+	}
+
+	pen := goalone.New([]byte(s.Secret), goalone.Timestamp)
+
+	if strings.Contains(stringToSign, "?") {
+		// handle case where URL contains query parameters
+		urlToSign = fmt.Sprintf("%s&hash=", stringToSign)
+	} else {
+		// no query parameters
+		urlToSign = fmt.Sprintf("%s?hash=", stringToSign)
+	}
+
+	tokenBytes := pen.Sign([]byte(urlToSign))
 	token := string(tokenBytes)
 
-	return token
+	return fmt.Sprintf("%s//%s%s", ex[0], domain, token), nil
 }
 
-func (s *Signer) IsValidToken(token string) bool {
-	crypt := goalone.New(s.Secret, goalone.Timestamp)
-	_, err := crypt.Unsign([]byte(token))
+// VerifyUrl verifies a signed url and returns true if it is valid,
+// false if it is not. http:// and https:// are stripped off
+// before verification
+func (s *Signature) VerifyUrl(data string) (bool, error) {
+	_, err := url.ParseRequestURI(data)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	return true
+	ex := strings.Split(data, "//")
+
+	var exploded []string
+	var stringToVerify string
+
+	exploded = strings.Split(ex[1], "/")
+	exploded[0] = ""
+
+	if strings.Contains(ex[1], "-") {
+		stringToVerify = strings.Join(exploded, "/")
+
+	} else {
+		stringToVerify = strings.Join(exploded, "/")
+	}
+
+	pen := goalone.New([]byte(s.Secret), goalone.Timestamp)
+
+	_, err = pen.Unsign([]byte(stringToVerify))
+	if err != nil {
+		// signature is not valid.
+		return false, err
+	}
+
+	// valid signature
+	return true, nil
+
 }
 
-func (s *Signer) IsExpired(token string, minutesUntilExpiration int) bool {
-	crypt := goalone.New(s.Secret, goalone.Timestamp)
-	timeSince := crypt.Parse([]byte(token))
+// IsExpired checks to see if a token has expired. It returns true if
+// the token was created within minutesUntilExpire, and false otherwise.
+func (s *Signature) IsExpired(data string, minutesUntilExpire int) bool {
+	exploded := strings.Split(data, "//")
 
-	return time.Since(timeSince.Timestamp) > time.Duration(minutesUntilExpiration)*time.Minute
+	pen := goalone.New([]byte(s.Secret), goalone.Timestamp)
+	ts := pen.Parse([]byte(exploded[1]))
+
+	return time.Since(ts.Timestamp) > time.Duration(minutesUntilExpire)*time.Minute
 }
