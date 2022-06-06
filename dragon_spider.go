@@ -10,9 +10,9 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
-	"github.com/kaliadmen/dragon_spider/mailer"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
+	"github.com/kaliadmen/mailer"
 	"github.com/robfig/cron/v3"
 	"log"
 	"net/http"
@@ -30,6 +30,8 @@ var redisPool *redis.Pool
 var appBadgerCache *cache.BadgerCache
 var badgerConnection *badger.DB
 var logFile *os.File
+
+//var mailer mailer.Mail
 
 //DragonSpider is an overall type for the Dragon Spider package.
 //Members exported in this type are available to any application that uses it
