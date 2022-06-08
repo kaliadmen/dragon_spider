@@ -8,7 +8,7 @@ type Fs interface {
 	Put(fileName, directory string) error
 	Get(destination string, items ...string) error
 	List(prefix string) ([]Listing, error)
-	Delete(itemsToDelete ...string) bool
+	Delete(itemsToDelete []string) bool
 }
 
 //Listing represents a file on a remote file system
