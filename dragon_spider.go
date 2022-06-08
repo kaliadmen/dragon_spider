@@ -10,6 +10,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
+	"github.com/kaliadmen/dragon_spider/filesystems/miniofs"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
 	"github.com/kaliadmen/mailer"
@@ -53,6 +54,7 @@ type DragonSpider struct {
 	Scheduler     *cron.Cron
 	Mail          mailer.Mail
 	Server        Server
+	FileSystems   map[string]any
 }
 
 type config struct {
@@ -242,6 +244,9 @@ func (ds *DragonSpider) New(rp string) error {
 	} else {
 		ds.InfoLog.Println("No mailer port set in .env file")
 	}
+
+	ds.FileSystems = ds.CreateFileSystem()
+
 	return nil
 }
 
@@ -541,4 +546,28 @@ func (ds *DragonSpider) CreateDSN() string {
 	}
 
 	return dsn
+}
+
+func (ds *DragonSpider) CreateFileSystem() map[string]any {
+	fileSystems := make(map[string]any)
+
+	if os.Getenv("MINIO_SECRET") != "" {
+		useSSL := false
+		if strings.ToLower(os.Getenv("MINIO_USESSL")) == "true" {
+			useSSL = true
+		}
+
+		minio := miniofs.Minio{
+			Endpoint: os.Getenv("MINIO_ENDPOINT"),
+			Key:      os.Getenv("MINIO_KEY"),
+			Secret:   os.Getenv("MINIO_SECRET"),
+			UseSSL:   useSSL,
+			Region:   os.Getenv("MINIO_REGION"),
+			Bucket:   os.Getenv("MINIO_BUCKET"),
+		}
+
+		fileSystems["MINIO"] = minio
+	}
+
+	return fileSystems
 }

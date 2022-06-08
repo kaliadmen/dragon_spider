@@ -19,3 +19,7 @@ type Listing struct {
 	Size         float64
 	IsDir        bool
 }
+
+func ToMegabytes(bytes float64) float64 {
+	return (bytes / 1024) / 1024
+}
