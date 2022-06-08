@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 )
 
-func (ds *DragonSpider) WriteJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+func (ds *DragonSpider) WriteJSON(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (ds *DragonSpider) WriteJSON(w http.ResponseWriter, status int, data interf
 	return nil
 }
 
-func (ds *DragonSpider) ReadJSON(w http.ResponseWriter, r *http.Request, data interface{}) error {
+func (ds *DragonSpider) ReadJSON(w http.ResponseWriter, r *http.Request, data any) error {
 	maxBytes := 1048576
 	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 
@@ -51,7 +51,7 @@ func (ds *DragonSpider) ReadJSON(w http.ResponseWriter, r *http.Request, data in
 	return nil
 }
 
-func (ds *DragonSpider) WriteXML(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+func (ds *DragonSpider) WriteXML(w http.ResponseWriter, status int, data any, headers ...http.Header) error {
 	out, err := xml.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err

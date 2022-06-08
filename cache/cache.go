@@ -7,14 +7,14 @@ import (
 
 type Cache interface {
 	Has(string) (bool, error)
-	Get(string) (interface{}, error)
-	Set(string, interface{}, ...int) error
+	Get(string) (any, error)
+	Set(string, any, ...int) error
 	Delete(string2 string) error
 	DeleteByMatch(string) error
 	DeleteAll() error
 }
 
-type Entry map[string]interface{}
+type Entry map[string]any
 
 func encode(item Entry) ([]byte, error) {
 	bBuffer := bytes.Buffer{}

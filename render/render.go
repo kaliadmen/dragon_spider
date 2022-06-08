@@ -27,7 +27,7 @@ type TemplateData struct {
 	IntMap          map[string]int
 	StringMap       map[string]string
 	FloatMap        map[string]float32
-	Data            map[string]interface{}
+	Data            map[string]any
 	CSRFToken       string
 	Port            string
 	ServerName      string
@@ -37,7 +37,7 @@ type TemplateData struct {
 }
 
 //Page renders templates using the render engine set in the Renderer
-func (r *Render) Page(w http.ResponseWriter, req *http.Request, view string, variables, data interface{}) error {
+func (r *Render) Page(w http.ResponseWriter, req *http.Request, view string, variables, data any) error {
 	switch strings.ToLower(r.Renderer) {
 	case "go":
 		return r.UseGo(w, req, view, data)
@@ -52,7 +52,7 @@ func (r *Render) Page(w http.ResponseWriter, req *http.Request, view string, var
 }
 
 //UseGo uses go template engine to render template pages
-func (r *Render) UseGo(w http.ResponseWriter, req *http.Request, view string, data interface{}) error {
+func (r *Render) UseGo(w http.ResponseWriter, req *http.Request, view string, data any) error {
 	tmpl, err := template.ParseFiles(fmt.Sprintf("%s/views/%s.page.tmpl", r.RootPath, view))
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (r *Render) UseGo(w http.ResponseWriter, req *http.Request, view string, da
 }
 
 //UseJet uses jet engine to render template pages
-func (r *Render) UseJet(w http.ResponseWriter, req *http.Request, templateName string, variables, data interface{}) error {
+func (r *Render) UseJet(w http.ResponseWriter, req *http.Request, templateName string, variables, data any) error {
 	var vars jet.VarMap
 
 	//format variables for jet

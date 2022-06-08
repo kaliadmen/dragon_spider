@@ -21,7 +21,7 @@ func (bc *BadgerCache) Has(key string) (bool, error) {
 	return true, nil
 }
 
-func (bc *BadgerCache) Get(key string) (interface{}, error) {
+func (bc *BadgerCache) Get(key string) (any, error) {
 	key = fmt.Sprintf("%s:%s", bc.Prefix, key)
 	var fromCache []byte
 
@@ -54,7 +54,7 @@ func (bc *BadgerCache) Get(key string) (interface{}, error) {
 	return item, nil
 }
 
-func (bc *BadgerCache) Set(key string, value interface{}, expires ...int) error {
+func (bc *BadgerCache) Set(key string, value any, expires ...int) error {
 	if key == "" || value == "" {
 		return errors.New("blank entries are not allowed")
 	}

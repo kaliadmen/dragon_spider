@@ -35,7 +35,7 @@ type Message struct {
 	Subject     string
 	Template    string
 	Attachments []string
-	Data        interface{}
+	Data        any
 }
 
 type Result struct {

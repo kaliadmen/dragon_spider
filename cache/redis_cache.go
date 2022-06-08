@@ -31,7 +31,7 @@ func (rc *RedisCache) Has(str string) (bool, error) {
 	return ok, nil
 }
 
-func (rc *RedisCache) Get(str string) (interface{}, error) {
+func (rc *RedisCache) Get(str string) (any, error) {
 	key := fmt.Sprintf("%s:%s", rc.Prefix, str)
 	conn := rc.Connection.Get()
 	defer func(conn redis.Conn) {
@@ -57,7 +57,7 @@ func (rc *RedisCache) Get(str string) (interface{}, error) {
 	return item, nil
 }
 
-func (rc *RedisCache) Set(str string, value interface{}, expires ...int) error {
+func (rc *RedisCache) Set(str string, value any, expires ...int) error {
 	if str == "" || value == "" {
 		return errors.New("blank entries are not allowed")
 	}
