@@ -103,7 +103,7 @@ func (m *Minio) List(prefix string) ([]filesystems.Listing, error) {
 	return listing, nil
 }
 
-func (m *Minio) Delete(itemsToDelete []string) bool {
+func (m *Minio) Delete(itemsToDelete []string) (bool, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	client := m.getCredentials()
@@ -116,9 +116,9 @@ func (m *Minio) Delete(itemsToDelete []string) bool {
 		err := client.RemoveObject(ctx, m.Bucket, item, opts)
 		if err != nil {
 			fmt.Println("miniofs:", err)
-			return false
+			return false, err
 		}
 	}
 
-	return true
+	return true, nil
 }
