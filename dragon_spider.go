@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
 	"github.com/kaliadmen/dragon_spider/filesystems/miniofs"
+	"github.com/kaliadmen/dragon_spider/filesystems/sftpfs"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
 	"github.com/kaliadmen/mailer"
@@ -567,6 +568,17 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 		}
 
 		fileSystems["MINIO"] = minio
+	}
+
+	if os.Getenv("SFTP_HOST") != "" {
+		sftp := sftpfs.SFTP{
+			Host:     os.Getenv("SFTP_HOST"),
+			User:     os.Getenv("SFTP_USER"),
+			Password: os.Getenv("SFTP_PASSWORD"),
+			Port:     os.Getenv("SFTP_PORT"),
+		}
+
+		fileSystems["SFTP"] = sftp
 	}
 
 	return fileSystems
