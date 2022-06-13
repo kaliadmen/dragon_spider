@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kaliadmen/dragon_spider/cache"
 	"github.com/kaliadmen/dragon_spider/filesystems/miniofs"
+	"github.com/kaliadmen/dragon_spider/filesystems/s3fs"
 	"github.com/kaliadmen/dragon_spider/filesystems/sftpfs"
 	"github.com/kaliadmen/dragon_spider/render"
 	"github.com/kaliadmen/dragon_spider/session"
@@ -579,6 +580,18 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 		}
 
 		fileSystems["SFTP"] = sftp
+	}
+
+	if os.Getenv("S3_KEY") != "" {
+		s3 := s3fs.S3{
+			Key:      os.Getenv("S3_KEY"),
+			Secret:   os.Getenv("S3_SECRET"),
+			Region:   os.Getenv("S3_REGION"),
+			Endpoint: os.Getenv("S3_ENDPOINT"),
+			Bucket:   os.Getenv("S3_BUCKET"),
+		}
+
+		fileSystems["S3"] = s3
 	}
 
 	return fileSystems
