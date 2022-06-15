@@ -57,6 +57,9 @@ type DragonSpider struct {
 	Mail          mailer.Mail
 	Server        Server
 	FileSystems   map[string]any
+	Minio         miniofs.Minio
+	S3            s3fs.S3
+	SFTP          sftpfs.SFTP
 }
 
 type config struct {
@@ -569,6 +572,7 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 		}
 
 		fileSystems["MINIO"] = minio
+		ds.Minio = minio
 	}
 
 	if os.Getenv("SFTP_HOST") != "" {
@@ -580,6 +584,7 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 		}
 
 		fileSystems["SFTP"] = sftp
+		ds.SFTP = sftp
 	}
 
 	if os.Getenv("S3_KEY") != "" {
@@ -592,6 +597,7 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 		}
 
 		fileSystems["S3"] = s3
+		ds.S3 = s3
 	}
 
 	return fileSystems
