@@ -69,6 +69,7 @@ type config struct {
 	cookie      cookieConfig
 	database    databaseConfig
 	redis       redisConfig
+	uploads     uploadConfig
 }
 
 type Server struct {
@@ -167,6 +168,22 @@ func (ds *DragonSpider) New(rp string) error {
 
 	}
 
+	//file uploads
+	types := strings.Split(os.Getenv("ALLOWED_FILETYPES"), ",")
+	var mimeTypes []string
+
+	for _, mimetype := range types {
+		mimeTypes = append(mimeTypes, mimetype)
+	}
+
+	var maxUploadSize int64
+	if maxSize, err := strconv.Atoi(os.Getenv("MAX_UPLOAD_SIZE")); err != nil {
+		//15 MB
+		maxUploadSize = 15 << 20
+	} else {
+		maxUploadSize = int64(maxSize)
+	}
+
 	//set config variables
 	ds.config = config{
 		port:     os.Getenv("PORT"),
@@ -187,6 +204,10 @@ func (ds *DragonSpider) New(rp string) error {
 			host:     os.Getenv("REDIS_HOST"),
 			password: os.Getenv("REDIS_PASSWORD"),
 			prefix:   os.Getenv("CACHE_PREFIX"),
+		},
+		uploads: uploadConfig{
+			maxUploadSize:    maxUploadSize,
+			allowedMimeTypes: mimeTypes,
 		},
 	}
 	//set app server variables
