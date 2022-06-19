@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -38,6 +39,18 @@ func runMigration(migrationType, step string) error {
 	case "down":
 		if step == "all" {
 			err := ds.MigrateDownAll(dsn)
+			if err != nil {
+				return err
+			}
+		}
+
+		step, err := strconv.Atoi(step)
+		if err != nil {
+			gracefulExit(err)
+		}
+
+		if step > 1{
+			err := ds.Steps(dsn, step)
 			if err != nil {
 				return err
 			}
