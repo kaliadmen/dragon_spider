@@ -37,6 +37,10 @@ func runMigration(migrationType, step string) error {
 		}
 
 	case "down":
+		if step == "" {
+			step = "1"
+		}
+
 		if step == "all" {
 			err := ds.MigrateDownAll(dsn)
 			if err != nil {
