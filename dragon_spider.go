@@ -342,7 +342,7 @@ func (ds *DragonSpider) createRedisPool() *redis.Pool {
 //createBadgerConnection creates a new connection to badger db
 func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
 	if ds.Debug {
-		db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/db/badger"))
+		db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/tmp/badger"))
 		if err != nil {
 			return nil, err
 		}
@@ -350,7 +350,7 @@ func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
 		return db, nil
 	}
 
-	db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/db/badger").WithLogger(nil))
+	db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/tmp/badger").WithLogger(nil))
 	if err != nil {
 		return nil, err
 	}
