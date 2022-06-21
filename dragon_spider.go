@@ -301,8 +301,6 @@ func (ds *DragonSpider) createDotEnv(path string) error {
 	return nil
 }
 
-//createSqliteDb creates a sqlite database file
-
 func (ds *DragonSpider) useDatabase(dbType string) error {
 	pool, err := ds.OpenDb(dbType, ds.CreateDSN())
 	if err != nil {
@@ -341,6 +339,13 @@ func (ds *DragonSpider) createRedisPool() *redis.Pool {
 
 //createBadgerConnection creates a new connection to badger db
 func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
+	if !FileExists(ds.RootPath + "/db/badger") {
+		err := ds.CreateFile(ds.RootPath + "/db/badger")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if ds.Debug {
 		db, err := badger.Open(badger.DefaultOptions(ds.RootPath + "/db/badger"))
 		if err != nil {
