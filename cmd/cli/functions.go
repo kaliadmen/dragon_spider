@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
@@ -72,20 +73,21 @@ func GetDSN() string {
 
 func showHelp() {
 	color.Yellow(`Available commands:
-	help                   -show help commands
-	version	               -print application version
-	migrate(up)            -runs all up migrations that have not been ran
-	migrate down           -reverses most recent migration
-	migrate down all       -runs all down migrations
-	migrate n[int]         -runs n number of migrations, migrates down if negative number is passed
-	migrate reset          -runs all down migration in reverse, and runs all up migrations
-	make migrations <name> -creates an up and down migration in migrations directory
-	make auth              -creates migrations, models, and middleware for authentication, and runs migrations
-	make database          -create a sqlite database in tmp directory
-	make handler <name>    -creates a bare handler in handlers directory
-	make model <name>      -creates a bare model in data directory
-	make session           -creates a database table or cache entry for session store
-	make mail <name>       -creates a html and plaintext email template in mail directory
+	help                           -show help commands
+	version	                       -print application version
+	migrate(up)                    -runs all up migrations that have not been ran
+	migrate down                   -reverses most recent migration
+	migrate down all               -runs all down migrations
+	migrate down n[int]            -runs n number of migrations, migrates down if negative number is passed
+	migrate reset                  -runs all down migration in reverse, and runs all up migrations
+	make migration <name> <format> -creates an up and down migration in migrations directory; format=sql/fizz (default fizz)
+	make auth                      -creates migrations, models, and middleware for authentication, and runs migrations
+	make database                  -create a sqlite database in tmp directory
+	make handler <name>            -creates a bare handler in handlers directory
+	make model <name>              -creates a bare model in data directory
+	make popConfig                 -creates a config directory and a bare pop config file for gobuffalo migrations
+	make session                   -creates a database table or cache entry for session store
+	make mail <name>               -creates a html and plaintext email template in mail directory
 `)
 }
 
@@ -141,4 +143,17 @@ func updateSource() {
 	if err != nil {
 		gracefulExit(err)
 	}
+}
+
+func validatePopConfig() {
+	dbType := convertDbType(ds.Db.DatabaseType)
+
+	if dbType == "" {
+		gracefulExit(errors.New("no database connection supplied in .env file"))
+	}
+
+	if !fileExists(ds.RootPath + "/config/database.yml") {
+		gracefulExit(errors.New(ds.RootPath + "/config/database.yml does not exist"))
+	}
+
 }

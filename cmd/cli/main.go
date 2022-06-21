@@ -15,7 +15,7 @@ var ds dragonSpider.DragonSpider
 func main() {
 	var message string
 
-	arg1, arg2, arg3, err := validateArguments()
+	arg1, arg2, arg3, arg4, err := validateArguments()
 
 	if err != nil {
 		gracefulExit(err)
@@ -44,7 +44,7 @@ func main() {
 		if arg2 == "" {
 			gracefulExit(errors.New("make requires subcommands: (migration|handler|model)"))
 		}
-		err = runMake(arg2, arg3)
+		err = runMake(arg2, arg3, arg4)
 		if err != nil {
 			gracefulExit(err)
 		}
@@ -66,8 +66,8 @@ func main() {
 	gracefulExit(nil, message)
 }
 
-func validateArguments() (string, string, string, error) {
-	var arg1, arg2, arg3 string
+func validateArguments() (string, string, string, string, error) {
+	var arg1, arg2, arg3, arg4 string
 
 	if len(os.Args) > 1 {
 		arg1 = os.Args[1]
@@ -79,13 +79,16 @@ func validateArguments() (string, string, string, error) {
 		if len(os.Args) >= 4 {
 			arg3 = os.Args[3]
 		}
+		if len(os.Args) >= 5 {
+			arg4 = os.Args[4]
+		}
 	} else {
 		color.Red("Error: commands required")
 		showHelp()
-		return "", "", "", errors.New("commands required")
+		return "", "", "", "", errors.New("commands required")
 	}
 
-	return arg1, arg2, arg3, nil
+	return arg1, arg2, arg3, arg4, nil
 }
 
 func gracefulExit(err error, msg ...string) {

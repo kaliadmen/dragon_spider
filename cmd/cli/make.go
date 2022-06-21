@@ -71,7 +71,12 @@ func runMake(arg2, arg3 string) error {
 
 		err := makeModel(arg3)
 		if err != nil {
-			gracefulExit(err)
+			return err
+		}
+	case "popconfig":
+		err := makePopConfig()
+		if err != nil {
+			return err
 		}
 
 	case "session":

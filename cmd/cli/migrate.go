@@ -1,59 +1,94 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"github.com/gobuffalo/pop"
+	"strconv"
 )
 
-func makeMigrations(name string) error {
-	dbType := convertDbType(ds.Db.DatabaseType)
-	filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), name)
+func makeMigrations(name, migrationFormat string) error {
+	var upMigration, downMigration string
 
-	upFile := ds.RootPath + "/migrations/" + filename + "." + dbType + ".up.sql"
-	downFile := ds.RootPath + "/migrations/" + filename + "." + dbType + ".down.sql"
+	validatePopConfig()
 
-	err := makeFileFromTemplate("templates/migrations/migration."+dbType+".up.sql", upFile)
-	if err != nil {
-		gracefulExit(err)
+	if migrationFormat == "fizz" || migrationFormat == "" {
+		migrationFormat = "fizz"
+		upBytes, err := templateFs.ReadFile("templates/migrations/migration_up.fizz")
+		if err != nil {
+			return err
+		}
+
+		downBytes, err := templateFs.ReadFile("templates/migrations/migration_down.fizz")
+		if err != nil {
+			return err
+		}
+
+		upMigration = string(upBytes)
+		downMigration = string(downBytes)
+	} else {
+		migrationFormat = "sql"
 	}
 
-	err = makeFileFromTemplate("templates/migrations/migration."+dbType+".down.sql", downFile)
+	err := ds.CreatePopMigrations([]byte(upMigration), []byte(downMigration), name, migrationFormat)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil
 }
 
 func runMigration(migrationType, step string) error {
-	dsn := GetDSN()
+	validatePopConfig()
+	tx, err := ds.ConnectToPop()
+	if err != nil {
+		return err
+	}
+
+	defer func(tx *pop.Connection) {
+		err := tx.Close()
+		if err != nil {
+			gracefulExit(err)
+		}
+	}(tx)
 
 	switch migrationType {
 	case "up":
-		err := ds.MigrateUp(dsn)
+		//err := ds.MigrateUp(dsn)
+		err := ds.PopMigrateUp(tx)
 		if err != nil {
 			return err
 		}
 
 	case "down":
+		if step == "" {
+			step = "1"
+		}
+
 		if step == "all" {
-			err := ds.MigrateDownAll(dsn)
+			err := ds.PopMigrateDown(tx, -1)
+			if err != nil {
+				return err
+			}
+		}
+
+		step, err := strconv.Atoi(step)
+		if err != nil {
+			gracefulExit(err)
+		}
+
+		if step > 1 {
+			err := ds.PopMigrateDown(tx, step)
 			if err != nil {
 				return err
 			}
 		} else {
-			err := ds.Steps(dsn, -1)
+			err := ds.PopMigrateDown(tx, 1)
 			if err != nil {
 				return err
 			}
 		}
 
 	case "reset":
-		err := ds.MigrateDownAll(dsn)
-		if err != nil {
-			return err
-		}
-		err = ds.MigrateUp(dsn)
+		err := ds.PopReset(tx)
 		if err != nil {
 			return err
 		}

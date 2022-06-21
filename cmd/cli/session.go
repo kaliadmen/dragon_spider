@@ -2,34 +2,50 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"time"
+	"github.com/gobuffalo/pop"
+	"os"
 )
 
 func makeSessionTable() error {
 	dbType := convertDbType(ds.Db.DatabaseType)
 
-	if dbType == "" {
-		gracefulExit(errors.New("you need to set a session type in .env file first"))
+	if dbType == "" || os.Getenv("SESSION_TYPE") == "" {
+		return errors.New("you need to set a session type and/or a database in .env file first")
 	}
 
-	fileName := fmt.Sprintf("%d_create_session_table", time.Now().UnixNano())
-	upFile := ds.RootPath + "/migrations/" + fileName + "." + dbType + ".up.sql"
-	downFile := ds.RootPath + "/migrations/" + fileName + "." + dbType + ".down.sql"
+	validatePopConfig()
 
-	err := makeFileFromTemplate("templates/migrations/"+"session_table."+dbType+".up.sql", upFile)
+	tx, err := ds.ConnectToPop()
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
-	err = makeFileFromTemplate("templates/migrations/"+"session_table."+dbType+".down.sql", downFile)
+	defer func(tx *pop.Connection) {
+		err := tx.Close()
+		if err != nil {
+			gracefulExit(err)
+		}
+	}(tx)
+
+	upBytes, err := templateFs.ReadFile("templates/migrations/session_table." + dbType + ".up.sql")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
-	err = runMigration("up", "")
+	downBytes, err := templateFs.ReadFile("templates/migrations/session_table." + dbType + ".down.sql")
 	if err != nil {
-		gracefulExit(err)
+		return err
+	}
+
+	err = ds.CreatePopMigrations(upBytes, downBytes, "create_session_table", "sql")
+	if err != nil {
+		return err
+	}
+
+	//run migrations
+	err = ds.PopMigrateUp(tx)
+	if err != nil {
+		return err
 	}
 
 	return nil
