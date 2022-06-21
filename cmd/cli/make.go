@@ -2,16 +2,17 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/fatih/color"
 	"strings"
 )
 
-func runMake(arg2, arg3 string) error {
+func runMake(arg2, arg3, arg4 string) error {
 	switch strings.ToLower(arg2) {
 	case "auth":
 		err := makeAuth()
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 		color.Yellow(" -users, tokens and remember_token migrations created and executed")
 		color.Yellow(" -user, token, and remember_me models created")
@@ -24,49 +25,49 @@ func runMake(arg2, arg3 string) error {
 
 	case "handler":
 		if arg3 == "" {
-			gracefulExit(errors.New("handler must have a name"))
+			return errors.New("handler must have a name")
 		}
 
 		err := makeHandler(arg3)
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 
 	case "key":
 		err := makeKey()
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 
 	case "database":
 		err := makeSqliteDb()
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 
 	case "mail":
 		if arg3 == "" {
-			gracefulExit(errors.New("mail template must have a name"))
+			return errors.New("mail template must have a name")
 		}
 
 		err := makeMail(arg3)
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 
 	case "migration":
 		if arg3 == "" {
-			gracefulExit(errors.New("migration must have a name"))
+			return errors.New("migration must have a name")
 		}
 
-		err := makeMigrations(arg3)
+		err := makeMigrations(arg3, arg4)
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 
 	case "model":
 		if arg3 == "" {
-			gracefulExit(errors.New("model must have a name"))
+			return errors.New("model must have a name")
 		}
 
 		err := makeModel(arg3)
@@ -82,8 +83,10 @@ func runMake(arg2, arg3 string) error {
 	case "session":
 		err := makeSessionTable()
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
+	default:
+		return errors.New(fmt.Sprintf("unknown make command: %s", arg2))
 
 	}
 

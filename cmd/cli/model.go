@@ -10,7 +10,7 @@ import (
 func makeModel(name string) error {
 	data, err := templateFs.ReadFile("templates/data/model.go.txt")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	model := string(data)
@@ -28,7 +28,7 @@ func makeModel(name string) error {
 
 	fileName := ds.RootPath + "/data/" + strings.ToLower(modelName) + ".go"
 	if fileExists(fileName) {
-		gracefulExit(errors.New(fileName + "already exist"))
+		return errors.New(fileName + "already exist")
 	}
 
 	model = strings.ReplaceAll(model, "$MODELNAME$", strcase.ToCamel(modelName))
@@ -37,7 +37,7 @@ func makeModel(name string) error {
 
 	err = copyDataToFile([]byte(model), fileName)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil

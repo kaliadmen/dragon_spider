@@ -10,12 +10,12 @@ import (
 func makeHandler(name string) error {
 	fileName := ds.RootPath + "/handlers/" + strings.ToLower(name) + ".go"
 	if fileExists(fileName) {
-		gracefulExit(errors.New(fileName + "already exist"))
+		return errors.New(fileName + "already exist")
 	}
 
 	data, err := templateFs.ReadFile("templates/handlers/handler.go.txt")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	handler := string(data)
@@ -23,7 +23,7 @@ func makeHandler(name string) error {
 
 	err = ioutil.WriteFile(fileName, []byte(handler), 0644)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil

@@ -8,12 +8,12 @@ func makeMail(arg3 string) error {
 
 	err := makeFileFromTemplate("templates/mailer/mail.html.tmpl", htmlMail)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	err = makeFileFromTemplate("templates/mailer/mail.txt.tmpl", plainMail)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil

@@ -18,12 +18,12 @@ func makeFileFromTemplate(templatePath, targetFile string) error {
 
 	data, err := templateFs.ReadFile(templatePath)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	err = copyDataToFile(data, targetFile)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil

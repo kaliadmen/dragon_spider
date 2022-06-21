@@ -16,7 +16,7 @@ func makeKey() error {
 	color.Yellow("Random 32 character encryption key: %s", randKey)
 	err := autoAdd(randKey)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 	return nil
 }
@@ -33,7 +33,7 @@ func autoAdd(key string) error {
 	case "y", "Y", "yes", "Yes":
 		err := addKeyToEnv(key)
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 		return nil
 
@@ -55,7 +55,7 @@ func addKeyToEnv(key string) error {
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	env := string(data)
@@ -64,7 +64,7 @@ func addKeyToEnv(key string) error {
 
 	err = ioutil.WriteFile(filePath, []byte(env), 0644)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	return nil

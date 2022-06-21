@@ -48,14 +48,14 @@ func createApp(appName string) error {
 	//remove .git directory
 	err = os.RemoveAll(fmt.Sprintf("./%s/.git", appName))
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	//create a evn file
 	color.Yellow("\tCreating .env file...")
 	data, err := templateFs.ReadFile("templates/env.txt")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	env := string(data)
@@ -65,7 +65,7 @@ func createApp(appName string) error {
 
 	err = copyDataToFile([]byte(env), fmt.Sprintf("./%s/.env", appName))
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	//create makefile
@@ -74,12 +74,12 @@ func createApp(appName string) error {
 	if runtime.GOOS == "windows" {
 		source, err = os.Open(fmt.Sprintf("./%s/Makefile.windows", appName))
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 	} else {
 		source, err = os.Open(fmt.Sprintf("./%s/Makefile.linux", appName))
 		if err != nil {
-			gracefulExit(err)
+			return err
 		}
 	}
 
@@ -92,7 +92,7 @@ func createApp(appName string) error {
 
 	dest, err := os.Create(fmt.Sprintf("./%s/Makefile", appName))
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	defer func(dest *os.File) {
@@ -104,7 +104,7 @@ func createApp(appName string) error {
 
 	_, err = io.Copy(dest, source)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	_ = os.Remove("./" + appName + "/Makefile.linux")
@@ -116,21 +116,21 @@ func createApp(appName string) error {
 
 	data, err = templateFs.ReadFile("templates/go.mod.txt")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 	modFile := string(data)
 	modFile = strings.ReplaceAll(modFile, "${APP_NAME}", appURL)
 
 	err = copyDataToFile([]byte(modFile), "./"+appName+"/go.mod")
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 
 	//update existing go files with correct names and imports
 	color.Yellow("\tUpdating source files...")
 	err = os.Chdir("./" + appName)
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 	updateSource()
 
@@ -139,7 +139,7 @@ func createApp(appName string) error {
 	cmd := exec.Command("go", "mod", "tidy")
 	err = cmd.Start()
 	if err != nil {
-		gracefulExit(err)
+		return err
 	}
 	color.Green("Done building " + appURL)
 	color.Green("Go build something!")
