@@ -2,97 +2,92 @@ package dragonSpider
 
 import (
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/golang-migrate/migrate/v4"
+	"github.com/gobuffalo/pop"
+
 	_ "github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
+	"os"
 )
 
-func (ds *DragonSpider) MigrateUp(dsn string) error {
-	m, err := migrate.New("file://"+ds.RootPath+"/migrations", dsn)
-	if err != nil {
-		return err
+func (ds *DragonSpider) ConnectToPop() (*pop.Connection, error) {
+	popConnectionType := os.Getenv("POP_CONNECTION_TYPE")
+
+	if popConnectionType == "" {
+		popConnectionType = "development"
 	}
 
-	defer func(m *migrate.Migrate) {
-		err, _ := m.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(m)
+	tx, err := pop.Connect(popConnectionType)
+	if err != nil {
+		return nil, err
+	}
 
-	if err := m.Up(); err != nil {
-		log.Println("Error running migration:", err)
+	return tx, nil
+
+}
+
+func (ds *DragonSpider) CreatePopMigrations(upMigration, downMigration []byte, migrationName, migrationType string) error {
+	var migrationPath = ds.RootPath + "/migrations"
+
+	err := pop.MigrationCreate(migrationPath, migrationName, migrationType, upMigration, downMigration)
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (ds *DragonSpider) MigrateDownAll(dsn string) error {
-	m, err := migrate.New("file://"+ds.RootPath+"/migrations", dsn)
+func (ds *DragonSpider) PopMigrateUp(tx *pop.Connection) error {
+	var migrationPath = ds.RootPath + "/migrations"
+
+	fileMigrator, err := pop.NewFileMigrator(migrationPath, tx)
 	if err != nil {
 		return err
 	}
 
-	defer func(m *migrate.Migrate) {
-		err, _ := m.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(m)
-
-	if err := m.Down(); err != nil {
-		log.Println("Error running migration:", err)
-		return err
-	}
-
-	return nil
-
-}
-
-func (ds *DragonSpider) Steps(dsn string, n int) error {
-	m, err := migrate.New("file://"+ds.RootPath+"/migrations", dsn)
+	err = fileMigrator.Up()
 	if err != nil {
-		return err
-	}
-
-	defer func(m *migrate.Migrate) {
-		err, _ := m.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(m)
-
-	if err := m.Steps(n); err != nil {
-		log.Println("Error running migration:", err)
 		return err
 	}
 
 	return nil
 }
 
-func (ds *DragonSpider) ForceMigrate(dsn string) error {
-	m, err := migrate.New("file://"+ds.RootPath+"/migrations", dsn)
+func (ds *DragonSpider) PopMigrateDown(tx *pop.Connection, steps ...int) error {
+	var migrationPath = ds.RootPath + "/migrations"
+
+	n := 1
+	if len(steps) > 0 {
+		n = steps[0]
+	}
+
+	fileMigrator, err := pop.NewFileMigrator(migrationPath, tx)
 	if err != nil {
 		return err
 	}
 
-	defer func(m *migrate.Migrate) {
-		err, _ := m.Close()
-		if err != nil {
-			log.Println(err)
-		}
-	}(m)
-
-	if err := m.Force(-1); err != nil {
-		log.Println("Error running migration:", err)
+	err = fileMigrator.Down(n)
+	if err != nil {
 		return err
 	}
 
 	return nil
+}
 
+func (ds *DragonSpider) PopReset(tx *pop.Connection) error {
+	var migrationPath = ds.RootPath + "/migrations"
+
+	fileMigrator, err := pop.NewFileMigrator(migrationPath, tx)
+	if err != nil {
+		return err
+	}
+
+	err = fileMigrator.Reset()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
