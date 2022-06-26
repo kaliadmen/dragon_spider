@@ -90,22 +90,3 @@ func validateArguments() (string, string, string, string, error) {
 
 	return arg1, arg2, arg3, arg4, nil
 }
-
-func gracefulExit(err error, msg ...string) {
-	message := ""
-	if len(msg) > 0 {
-		message = msg[0]
-	}
-
-	if err != nil {
-		color.Red("Error: %v\n", err)
-	}
-
-	if len(message) > 0 {
-		color.Yellow(message)
-	} else {
-		color.Green("Done!")
-	}
-
-	os.Exit(0)
-}
