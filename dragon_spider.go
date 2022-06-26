@@ -26,7 +26,7 @@ import (
 	"time"
 )
 
-const version = "1.0.1"
+const version = "2.0.0"
 
 var appRedisCache *cache.RedisCache
 var redisPool *redis.Pool

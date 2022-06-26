@@ -110,6 +110,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kaliadmen/urlsigner v0.0.0-20220606164535-ab4be2e335a1 // indirect
 	github.com/karrick/godirwalk v1.17.0 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
@@ -119,6 +120,7 @@ require (
 	github.com/lib/pq v1.10.6 // indirect
 	github.com/luna-duclos/instrumentedsql v1.1.3 // indirect
 	github.com/markbates/errx v1.1.0 // indirect
+	github.com/markbates/goth v1.72.0 // indirect
 	github.com/markbates/oncer v1.0.0 // indirect
 	github.com/markbates/safe v1.0.1 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -156,12 +158,14 @@ require (
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220617184016-355a448f1bc9 // indirect
+	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914 // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.11 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
+	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3 // indirect
 	google.golang.org/grpc v1.46.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
