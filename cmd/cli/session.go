@@ -2,15 +2,21 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gobuffalo/pop"
 	"os"
 )
 
 func makeSessionTable() error {
 	dbType := convertDbType(ds.Db.DatabaseType)
+	sessionType := os.Getenv("SESSION_TYPE")
 
-	if dbType == "" || os.Getenv("SESSION_TYPE") == "" {
+	if dbType == "" || sessionType == "" {
 		return errors.New("you need to set a session type and/or a database in .env file first")
+	}
+
+	if sessionType == "redis" || sessionType == "badger" {
+		return errors.New(fmt.Sprintf("you session will be stored in %s", sessionType))
 	}
 
 	validatePopConfig()
