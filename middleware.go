@@ -5,7 +5,6 @@ import (
 	"github.com/justinas/nosurf"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 func (ds *DragonSpider) SessionLoadAndSave(next http.Handler) http.Handler {
@@ -34,7 +33,7 @@ func (ds *DragonSpider) NoSurf(next http.Handler) http.Handler {
 func (ds *DragonSpider) CheckForMaintenanceMode(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if maintenanceMode {
-			if !strings.Contains(r.URL.Path, "/public/maintenance.html") {
+			if !ds.allowedUrls(r.URL.Path) {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				w.Header().Set("Retry-After:", "300")
 				w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0")

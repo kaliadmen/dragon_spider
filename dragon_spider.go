@@ -672,3 +672,31 @@ func (ds *DragonSpider) listenRPC() {
 
 	}
 }
+
+func (ds *DragonSpider) allowedUrls(url string) bool {
+	base := strings.Split(url, "/")[1]
+
+	allowed := os.Getenv("ALLOWED_URLS")
+	allowedUrls := strings.Split(allowed, ",")
+
+	for _, allow := range allowedUrls {
+		if strings.Contains(allow, "*") {
+			if strings.Contains(allow, base) && base != "" {
+				return true
+			}
+		}
+	}
+
+	urlMap := make(map[string]bool)
+
+	for i := 0; i < len(allowedUrls); i++ {
+		urlMap[allowedUrls[i]] = true
+	}
+
+	if val, ok := urlMap[url]; ok {
+		return val
+	}
+
+	return false
+
+}
