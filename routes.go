@@ -27,5 +27,7 @@ func (ds *DragonSpider) routes() http.Handler {
 	//use csrf
 	mux.Use(ds.NoSurf)
 
+	mux.Use(ds.CheckForMaintenanceMode)
+
 	return mux
 }

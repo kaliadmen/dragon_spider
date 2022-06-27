@@ -30,6 +30,7 @@ import (
 
 const version = "2.0.0"
 
+var maintenanceMode bool
 var appRedisCache *cache.RedisCache
 var redisPool *redis.Pool
 var appBadgerCache *cache.BadgerCache
