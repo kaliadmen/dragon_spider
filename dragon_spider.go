@@ -18,7 +18,9 @@ import (
 	"github.com/kaliadmen/mailer"
 	"github.com/robfig/cron/v3"
 	"log"
+	"net"
 	"net/http"
+	"net/rpc"
 	"os"
 	"runtime"
 	"strconv"
@@ -500,6 +502,7 @@ func (ds *DragonSpider) ListenAndServe() {
 	}
 
 	ds.InfoLog.Printf("Listening on port: %s", os.Getenv("PORT"))
+	go ds.listenRPC()
 
 	err := srv.ListenAndServe()
 	if err != nil {
@@ -627,4 +630,44 @@ func (ds *DragonSpider) CreateFileSystem() map[string]any {
 	}
 
 	return fileSystems
+}
+
+type RPCServer struct{}
+
+func (r *RPCServer) MaintenanceMode(inMaintenance bool, res *string) error {
+	if inMaintenance {
+		maintenanceMode = true
+		*res = "Server is in maintenance mode"
+	} else {
+		maintenanceMode = false
+		*res = "Server is live!"
+	}
+
+	return nil
+}
+
+func (ds *DragonSpider) listenRPC() {
+	port := os.Getenv("RPC_PORT")
+
+	if port != "" {
+		ds.InfoLog.Println("RPC server listing on port:", port)
+		err := rpc.Register(new(RPCServer))
+		if err != nil {
+			ds.ErrorLog.Println(err)
+		}
+
+		listen, err := net.Listen("tcp", "127.0.0.1:"+port)
+		if err != nil {
+			ds.ErrorLog.Println(err)
+		}
+
+		for {
+			rpcConn, err := listen.Accept()
+			if err != nil {
+				continue
+			}
+			go rpc.ServeConn(rpcConn)
+		}
+
+	}
 }
