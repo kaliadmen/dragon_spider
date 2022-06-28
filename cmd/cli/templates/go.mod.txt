@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/CloudyKit/jet/v6 v6.1.0
 	github.com/go-chi/chi/v5 v5.0.7
-	github.com/kaliadmen/dragon_spider v1.1.1
 	github.com/kaliadmen/mailer v0.0.0-20220606182307-97d19eb9c42f
 	github.com/kaliadmen/urlsigner v0.0.0-20220606164535-ab4be2e335a1
 	github.com/markbates/goth v1.73.0
