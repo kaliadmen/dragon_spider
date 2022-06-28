@@ -1,4 +1,4 @@
-module github.com/kaliadmen/dragon_spider
+module github.com/kaliadmen/dragon_spider/v2
 
 go 1.18
 
