@@ -96,6 +96,7 @@ func (ds *DragonSpider) New(rp string) error {
 			"public",
 			"tmp",
 			"logs",
+			"screenshots",
 		},
 	}
 
