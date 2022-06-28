@@ -31,3 +31,16 @@ func (ds *DragonSpider) routes() http.Handler {
 
 	return mux
 }
+
+// Routes are dragonSpider specific routes, which are mounted in the routes file
+// in DragonSpider applications
+func Routes() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/test-ds", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte("it works!"))
+		if err != nil {
+			return
+		}
+	})
+	return r
+}
