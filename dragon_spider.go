@@ -616,10 +616,18 @@ func (ds *DragonSpider) listenRPC() {
 }
 
 func (ds *DragonSpider) allowedUrls(url string) bool {
-	base := strings.Split(url, "/")[1]
-
 	allowed := os.Getenv("ALLOWED_URLS")
+	if allowed == "" {
+		return false
+	}
+
+	base := strings.Split(url, "/")[1]
 	allowedUrls := strings.Split(allowed, ",")
+
+	if len(allowedUrls) == 1 && strings.Contains(allowedUrls[0], "*") {
+		ds.InfoLog.Println("Maintenance mode middleware detect all routes allowed! You should check your env ALLOWED_URLS")
+		return true
+	}
 
 	for _, allow := range allowedUrls {
 		if strings.Contains(allow, "*") {
