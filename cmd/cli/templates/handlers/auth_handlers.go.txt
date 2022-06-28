@@ -1,14 +1,26 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/CloudyKit/jet/v6"
-	"github.com/kaliadmen/dragon_spider/mailer"
-	"github.com/kaliadmen/dragon_spider/urlsigner"
-	"${APP_NAME}/data"
+	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/sessions"
+	"github.com/kaliadmen/mailer"
+	"github.com/kaliadmen/urlsigner"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
+	"github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/google"
+	"log"
+	"myapp/data"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -117,6 +129,9 @@ func (h *Handlers) UserLogout(w http.ResponseWriter, r *http.Request) {
 		_ = rt.DeleteByToken(h.App.Session.GetString(r.Context(), "remember_token"))
 	}
 
+	//logout of OAuth
+	h.OAuthLogout(w, r)
+
 	cookie := http.Cookie{
 		Name:     fmt.Sprintf("_%s_remember_me", h.App.AppName),
 		Value:    "",
@@ -177,7 +192,7 @@ func (h *Handlers) PostForgetPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	signedLink, _ := sign.SignUrl(link)
-    h.App.InfoLog.Println(signedLink)
+	h.App.InfoLog.Println(signedLink)
 
 	//send Email
 	var linkData struct {
@@ -274,4 +289,158 @@ func (h *Handlers) PostResetPassword(w http.ResponseWriter, r *http.Request) {
 	h.App.Session.Put(r.Context(), "flash", "Password has been reset")
 	http.Redirect(w, r, "/users/login", http.StatusSeeOther)
 
+}
+
+func (h *Handlers) InitOAuth() {
+	//scope of data needed from provider
+	gitScope := []string{"user"}
+	googleScope := []string{"email", "profile"}
+
+	goth.UseProviders(
+		github.New(os.Getenv("GITHUB_KEY"), os.Getenv("GITHUB_SECRET"), os.Getenv("GITHUB_CALLBACK"), gitScope...),
+		google.New(os.Getenv("GOOGLE_KEY"), os.Getenv("GOOGLE_SECRET"), os.Getenv("GOOGLE_CALLBACK"), googleScope...),
+	)
+
+	isSecure, err := strconv.ParseBool(os.Getenv("DEBUG"))
+	if err != nil {
+		isSecure = false
+	}
+	//setup cookie store for goth package
+	key := os.Getenv("KEY")
+	maxAge := 86400 * 30
+	cs := sessions.NewCookieStore([]byte(key))
+	cs.MaxAge(maxAge)
+	cs.Options.Path = "/"
+	cs.Options.Secure = !isSecure
+	cs.Options.HttpOnly = true
+
+	//session store that only exist during the login process
+	gothic.Store = cs
+}
+
+func (h *Handlers) OAuthLogin(w http.ResponseWriter, r *http.Request) {
+	provider := chi.URLParam(r, "provider")
+	h.App.Session.Put(r.Context(), "oauth_provider", provider)
+	h.InitOAuth()
+
+	if _, err := gothic.CompleteUserAuth(w, r); err == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	} else {
+		gothic.BeginAuthHandler(w, r)
+	}
+}
+
+func (h *Handlers) OAuthLogout(w http.ResponseWriter, r *http.Request) {
+	provider, ok := h.App.Session.Get(r.Context(), "oauth_provider").(string)
+	if !ok {
+		h.App.InfoLog.Println("here")
+		return
+	}
+
+	//call provider api to logout
+	//revoke authorization token
+	switch provider {
+	case "github":
+		clientId := os.Getenv("GITHUB_KEY")
+		clientSecret := os.Getenv("GITHUB_SECRET")
+		token := h.App.Session.Get(r.Context(), "oauth_token").(string)
+
+		var payload struct {
+			AccessToken string `json:"access_token"`
+		}
+		payload.AccessToken = token
+
+		jsonReq, err := json.Marshal(payload)
+		if err != nil {
+			h.App.ErrorLog.Println(err)
+		}
+		req, err := http.NewRequest(http.MethodDelete,
+			fmt.Sprintf("https://%s:%s@api.github.com/applications/%s/grant",
+				clientId, clientSecret, clientId), bytes.NewBuffer(jsonReq))
+		if err != nil {
+			h.App.ErrorLog.Println(err)
+			return
+		}
+
+		client := &http.Client{}
+		_, err = client.Do(req)
+		if err != nil {
+			h.App.ErrorLog.Println("Error logging out of GitHub: ", err)
+			return
+		}
+	case "google":
+		token := h.App.Session.Get(r.Context(), "oauth_token").(string)
+		_, err := http.PostForm(fmt.Sprintf("https://accounts.google.com/o/oauth2/revoke?%s", token), nil)
+		if err != nil {
+			h.App.ErrorLog.Println("Error logging out of Google: ", err)
+			return
+		}
+	}
+}
+
+func (h *Handlers) OAuthCallback(w http.ResponseWriter, r *http.Request) {
+	h.InitOAuth()
+
+	gothUser, err := gothic.CompleteUserAuth(w, r)
+	if err != nil {
+		h.App.Session.Put(r.Context(), "error", err.Error())
+		http.Redirect(w, r, "/users/login", http.StatusSeeOther)
+		return
+	}
+
+	//look up user using email
+	var u data.User
+	var testUser *data.User
+
+	testUser, err = u.GetByEmail(gothUser.Email)
+	if err != nil {
+		log.Println(err)
+		provider := h.App.Session.Get(r.Context(), "oauth_provider").(string)
+		//add user that doesn't exist'
+		var newUser data.User
+
+		switch provider {
+		case "github":
+			ex := strings.Split(gothUser.Name, " ")
+			newUser.FirstName = ex[0]
+			if len(ex) > 1 {
+				newUser.LastName = ex[1]
+			}
+		case "google":
+			newUser.FirstName = gothUser.FirstName
+			newUser.LastName = gothUser.LastName
+
+		default:
+			h.App.Session.Put(r.Context(), "error", "OAuth provider not supported")
+			http.Redirect(w, r, "/users/login", http.StatusSeeOther)
+			return
+		}
+
+		newUser.Active = 1
+		newUser.Email = gothUser.Email
+		newUser.Password = h.App.RandomString(20)
+		newUser.CreatedAt = time.Now()
+		newUser.UpdatedAt = time.Now()
+
+		_, err := newUser.Insert(newUser)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			h.App.Session.Put(r.Context(), "error", err.Error())
+			http.Redirect(w, r, "/users/login", http.StatusBadRequest)
+			return
+		}
+
+		testUser, err = u.GetByEmail(gothUser.Email)
+		if err != nil {
+			h.App.Session.Put(r.Context(), "error", err.Error())
+			http.Redirect(w, r, "/users/login", http.StatusUnauthorized)
+		}
+	}
+
+	h.App.Session.Put(r.Context(), "userId", testUser.Id)
+	h.App.Session.Put(r.Context(), "oauth_token", gothUser.AccessToken)
+	h.App.Session.Put(r.Context(), "oauth_email", gothUser.Email)
+
+	h.App.Session.Put(r.Context(), "flash", "You are now logged in")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
