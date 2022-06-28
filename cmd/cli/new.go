@@ -8,13 +8,15 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
 var appURL string
 
-func createApp(appName string) error {
+func createApp(appName, flag, port string) error {
 	appName = strings.ToLower(appName)
 	appName = strings.TrimSpace(appName)
 
@@ -58,8 +60,18 @@ func createApp(appName string) error {
 		return err
 	}
 
+	//check for port number
+	if flag == "-p" || flag == "p" && port != "" {
+		port = validatePort(port)
+		color.Yellow("port set to " + port)
+	} else {
+		port = "8492"
+		color.Yellow("port set to " + port)
+	}
+
 	env := string(data)
 	env = strings.ReplaceAll(env, "${APP_NAME}", appName)
+	env = strings.ReplaceAll(env, "${PORT}", port)
 	env = strings.ReplaceAll(env, "${APP_GITHUB_URL}", appURL)
 	env = strings.ReplaceAll(env, "${KEY}", ds.RandomString(32))
 
@@ -145,4 +157,22 @@ func createApp(appName string) error {
 	color.Green("Go build something!")
 
 	return nil
+}
+
+func validatePort(port string) string {
+	//^[0-9]{1,6}$
+	if ok, _ := regexp.MatchString(`^\d{1,6}$`, port); ok {
+		pNum, err := strconv.Atoi(port)
+		if err != nil {
+			return "8492"
+		}
+
+		if pNum > 65535 || pNum <= 0 {
+			return "8492"
+		}
+
+		return port
+	}
+
+	return "8492"
 }

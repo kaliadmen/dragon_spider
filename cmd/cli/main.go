@@ -36,7 +36,7 @@ func main() {
 			gracefulExit(errors.New("new requires a name for the application"))
 		}
 
-		err := createApp(arg2)
+		err := createApp(arg2, arg3, arg4)
 		if err != nil {
 			gracefulExit(err)
 		}
