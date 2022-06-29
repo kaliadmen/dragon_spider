@@ -341,11 +341,9 @@ func (ds *DragonSpider) createRedisPool() *redis.Pool {
 
 //createBadgerConnection creates a new connection to badger db
 func (ds *DragonSpider) createBadgerConnection() (*badger.DB, error) {
-	if !FileExists(ds.RootPath + "/db/badger") {
-		err := ds.CreateFile(ds.RootPath + "/db/badger")
-		if err != nil {
-			return nil, err
-		}
+	err := ds.CreateDir(ds.RootPath + "/db/badger")
+	if err != nil {
+		return nil, err
 	}
 
 	if ds.Debug {
