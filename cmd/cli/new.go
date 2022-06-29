@@ -63,10 +63,10 @@ func createApp(appName, flag, port string) error {
 	//check for port number
 	if flag == "-p" || flag == "p" && port != "" {
 		port = validatePort(port)
-		color.Yellow("port set to " + port)
+		color.Yellow("\tport set to " + port)
 	} else {
 		port = "8492"
-		color.Yellow("port set to " + port)
+		color.Yellow("\tport set to " + port)
 	}
 
 	env := string(data)
