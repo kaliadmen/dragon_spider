@@ -3,7 +3,7 @@ package miniofs
 import (
 	"context"
 	"fmt"
-	"github.com/kaliadmen/dragon_spider/filesystems"
+	"github.com/kaliadmen/dragon_spider/v2/filesystems"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"log"

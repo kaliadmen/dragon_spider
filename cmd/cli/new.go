@@ -148,7 +148,7 @@ func createApp(appName, flag, port string) error {
 
 	//run go mod tidy
 	color.Yellow("\tRunning go mod tidy...")
-	cmd := exec.Command("go", "get", "github.com/kaliadmen/dragon_spider")
+	cmd := exec.Command("go", "get", "github.com/kaliadmen/dragon_spider/v2")
 	err = cmd.Start()
 	if err != nil {
 		return err

@@ -2,7 +2,7 @@ package sftpfs
 
 import (
 	"fmt"
-	"github.com/kaliadmen/dragon_spider/filesystems"
+	"github.com/kaliadmen/dragon_spider/v2/filesystems"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io"
